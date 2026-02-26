@@ -1,0 +1,41 @@
+body{
+    margin:0;
+    font-family:Poppins;
+    display:flex;
+    background:#111;
+    color:white;
+}
+
+.sidebar{
+    width:250px;
+    background:black;
+    height:100vh;
+    padding:30px;
+}
+
+.sidebar h2{
+    color:gold;
+}
+
+.sidebar a{
+    display:block;
+    color:white;
+    text-decoration:none;
+    margin:20px 0;
+}
+
+.sidebar a:hover{
+    color:gold;
+}
+
+.main{
+    flex:1;
+    padding:50px;
+}
+
+.card{
+    background:#1a1a1a;
+    padding:30px;
+    border-radius:10px;
+    width:250px;
+}

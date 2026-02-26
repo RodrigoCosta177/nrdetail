@@ -1,0 +1,386 @@
+/* RESET */
+*{ margin:0; padding:0; box-sizing:border-box; }
+body{ font-family:'Segoe UI',sans-serif; background:#111; color:white; }
+
+/* HEADER */
+header{ display:flex; justify-content:space-between; align-items:center; padding:15px 50px; background:black; position:sticky; top:0; z-index:100; }
+/* LOGO HEADER (IMAGEM) */
+header .logo {
+    display: flex;
+    align-items: center;
+}
+
+header .logo img {
+    height: 60px;   /* ajusta aqui se quiseres maior ou menor */
+    width: auto;
+    display: block;
+    transition: 0.3s ease;
+}
+
+header .logo img:hover {
+    transform: scale(1.05);
+}
+nav a{ color:white; margin-left:20px; text-decoration:none; font-weight:500; transition:0.3s; }
+nav a:hover{ color:#ffcc00; }
+
+/* HERO */
+.hero{ height:100vh; background:url('../imagens/car.jpg') center/cover no-repeat; display:flex; justify-content:center; align-items:center; text-align:center; position:relative; }
+.hero::after{ content:''; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); }
+.hero-content{ position:relative; z-index:1; animation:fadeIn 1.5s ease-in-out; }
+.hero-content h1{ font-size:48px; color:#ffcc00; margin-bottom:20px; animation:slideDown 1s ease-out; }
+.btn{ background:#ffcc00; color:black; padding:20px 50px; text-decoration:none; font-weight:bold; border-radius:8px; transition:0.3s; display:inline-block; animation:bounce 1.2s infinite alternate; }
+.btn:hover{ background:#e6b800; }
+
+/* SERVIÇOS */
+.servicos{ padding:80px 50px; text-align:center; background:#111; }
+.servicos h2{ color:#ffcc00; margin-bottom:40px; font-size:32px; }
+.cards{ display:flex; justify-content:center; gap:30px; flex-wrap:wrap; }
+.card{ background:#222; padding:25px; border-radius:10px; width:250px; box-shadow:0 0 20px rgba(255,204,0,0.2); transition:transform 0.3s, box-shadow 0.3s; }
+.card:hover{ transform:translateY(-10px); box-shadow:0 0 30px rgba(255,204,0,0.5); }
+.card h3{ color:#ffcc00; margin-bottom:15px; font-size:20px; }
+.card p{ font-size:14px; color:white; line-height:1.4; }
+
+/* CARROSSEL */
+.carousel{ width:100%; max-width:800px; height:300px; overflow:hidden; position:relative; margin:30px auto; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.2); }
+.carousel img{ width:100%; height:100%; position:absolute; left:100%; opacity:0; transition:left 1s ease, opacity 1s ease; }
+.carousel img.active{ left:0; opacity:1; }
+
+/* FOOTER */
+footer{ background:black; text-align:center; padding:20px; }
+
+/* ANIMAÇÕES */
+@keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+@keyframes slideDown{ from{transform:translateY(-50px); opacity:0;} to{transform:translateY(0); opacity:1;} }
+@keyframes bounce{ from{transform:translateY(0);} to{transform:translateY(-10px);} }
+
+/* RESPONSIVO */
+@media(max-width:768px){ .cards{ flex-direction:column; align-items:center; } .hero-content h1{ font-size:32px; } }
+
+@media (max-width: 768px) {
+    .cards {
+        flex-direction: column;
+        gap: 20px;
+        padding: 0 10px;
+    }
+
+    .card {
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    .hero-content h1 {
+        font-size: 28px;
+    }
+
+    .btn {
+        padding: 15px 30px;
+    }
+}
+
+.estado-pendente {background:#ffcc00; color:black; font-weight:bold; border-radius:4px; padding:3px 8px;}
+.estado-processada {background:#3399ff; color:white; font-weight:bold; border-radius:4px; padding:3px 8px;}
+.estado-entregue {background:#33cc66; color:white; font-weight:bold; border-radius:4px; padding:3px 8px;}
+
+button, .export-btn {
+    transition: all 0.3s ease;
+}
+button:hover, .export-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px #ffcc00;
+}
+
+@media(max-width:900px){
+    table, thead, tbody, th, td, tr {
+        display:block;
+    }
+    thead tr {display:none;}
+    td {
+        position:relative;
+        padding-left:50%;
+        text-align:left;
+        margin-bottom:15px;
+    }
+    td:before {
+        position:absolute;
+        left:10px;
+        top:12px;
+        white-space:nowrap;
+        font-weight:bold;
+        color:#ffcc00;
+        content: attr(data-label);
+    }
+}
+
+.hero {
+    position: relative;
+    height: 80vh;
+    overflow: hidden;
+}
+
+/* Imagens do carrossel atrás do conteúdo */
+.hero-carousel img {
+    position: absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+    z-index: 0;
+}
+
+.hero-carousel img.active {
+    opacity: 1;
+}
+
+/* Overlay escuro */
+.hero::after {
+    content: '';
+    position: absolute;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 1;
+}
+
+.hero-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    color: white;
+    text-align: center;
+    animation: fadeSlide 1s ease-out forwards;
+}
+
+.servicos {
+    padding: 60px 10%;
+    background-color: #111;
+    color: white;
+}
+
+.servicos h1 {
+    text-align: center;
+    margin-bottom: 50px;
+    font-size: 36px;
+}
+
+.servico {
+    margin-bottom: 60px;
+}
+
+.servico h2 {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.servico p {
+    margin-bottom: 20px;
+    color: #ccc;
+}
+
+.antes-depois {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.antes-depois div {
+    flex: 1;
+    min-width: 250px;
+}
+
+.antes-depois img {
+    width: 100%;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.antes-depois img:hover {
+    transform: scale(1.05);
+}
+
+
+.produtos-page {
+    padding: 80px 10%;
+    background: #111;
+    color: white;
+    text-align: center;
+}
+
+.produtos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    margin-top: 50px;
+}
+
+.produto-card {
+    background: #1c1c1c;
+    padding: 20px;
+    border-radius: 15px;
+    transition: 0.3s;
+}
+
+.produto-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.produto-card h3 {
+    margin: 15px 0 10px;
+}
+
+.preco {
+    font-size: 20px;
+    font-weight: bold;
+    color: #e9d201;
+}
+
+.produto-card button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    border: none;
+    background: #f1da02;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.produto-card button:hover {
+    background: white;
+    color: black;
+}
+
+.produto-card:hover {
+    transform: scale(1.05);
+}
+
+.filtros {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.filtros button {
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    background: #e50914;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+
+.filtros button:hover {
+    background: white;
+    color: black;
+}
+
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #111;
+    color: white;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 9999;
+}
+
+.cookie-banner p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.cookie-banner a {
+    color: #ffcc00;
+    text-decoration: none;
+}
+
+.cookie-banner button {
+    background: #ffcc00;
+    border: none;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+
+/* ===== FOOTER PROFISSIONAL ===== */
+
+.footer {
+    background: black;
+    padding: 40px 20px;
+    margin-top: 80px;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.footer-logo img {
+    height: 60px;
+    margin-bottom: 20px;
+}
+
+.footer-links {
+    margin-bottom: 20px;
+}
+
+.footer-links a {
+    color: white;
+    margin: 0 15px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.3s;
+}
+
+.footer-links a:hover {
+    color: #ffcc00;
+}
+
+.footer-copy p {
+    font-size: 13px;
+    color: #aaa;
+}
+
+/* Botões do carrinho */
+.btn-quantidade, .btn-eliminar {
+    width: 35px;       /* largura fixa */
+    height: 35px;      /* altura fixa */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: none;
+    background: #ffcc00;
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-quantidade:hover, .btn-eliminar:hover {
+    background: #e6b800;
+}
+
+/* Span da quantidade */
+.quantidade {
+    display: inline-block;
+    width: 35px;       /* largura fixa */
+    text-align: center;
+}
