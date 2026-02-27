@@ -384,3 +384,43 @@ button:hover, .export-btn:hover {
     width: 35px;       /* largura fixa */
     text-align: center;
 }
+
+/* Formulário (marcar) — texto branco */
+.marcacao-container input,
+.marcacao-container select,
+.marcacao-container textarea,
+.marcacao-container .flatpickr-input,
+.marcacao-container option {
+  color: #ffffff;
+}
+
+.marcacao-container ::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+
+#horarios {
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:10px;
+    margin-top:10px;
+}
+.horario {
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+    cursor:pointer;
+    font-weight:bold;
+    background:#2ecc71; /* verde livre */
+    color:white;
+    transition:0.3s;
+}
+.horario:hover { transform: scale(1.05); }
+.horario.ocupado {
+    background:#e74c3c; /* vermelho ocupado */
+    cursor:not-allowed;
+    color:white;
+}
+.horario.selecionado {
+    background:#f1c40f; /* dourado selecionado */
+    color:black;
+}

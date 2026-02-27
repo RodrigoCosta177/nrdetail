@@ -192,5 +192,25 @@ if(session_status() == PHP_SESSION_NONE){
     });
 </script>
 
+<footer class="footer">
+    <div class="footer-container">
+        
+        <div class="footer-logo">
+            <img src="imagens/logo.png" alt="NR Detail Logo">
+        </div>
+
+        <div class="footer-links">
+            <a href="privacidade.php">Política de Privacidade</a>
+            <a href="termos.php">Termos e Condições</a>
+            <a href="cookies.php">Política de Cookies</a>
+        </div>
+
+        <div class="footer-copy">
+            <p>© <?php echo date("Y"); ?> NR Detail Car & Care - Todos os direitos reservados</p>
+        </div>
+
+    </div>
+</footer>
+
 </body>
 </html>
