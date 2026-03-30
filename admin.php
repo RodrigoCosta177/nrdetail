@@ -406,6 +406,7 @@ $encomendas = $conn->query("
                 <th>Data/Hora</th>
                 <th>Estado</th>
                 <th>Atualizar</th>
+                <th>PDF</th>
             </tr>
         </thead>
         <tbody>
@@ -457,11 +458,23 @@ $encomendas = $conn->query("
                                 </button>
                             </form>
                         </td>
+                        <td data-label="PDF">
+                            <?php
+                            $ficheiroPdf = 'notas_encomenda/nota_encomenda_' . (int)$e['id'] . '.pdf';
+                            ?>
+                            <?php if (file_exists(__DIR__ . '/' . $ficheiroPdf)): ?>
+                                <a href="<?= $ficheiroPdf ?>" target="_blank" class="export-btn" style="padding:5px 10px; margin:0;">
+                                    Ver PDF
+                                </a>
+                            <?php else: ?>
+                                <span style="color:#999;">Sem PDF</span>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="8">Não existem encomendas.</td>
+                    <td colspan="9">Não existem encomendas.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

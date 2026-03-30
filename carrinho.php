@@ -37,7 +37,7 @@ $stmt = $conn->prepare("
     SELECT c.id AS carrinho_id, p.nome, p.preco, p.imagem, c.quantidade
     FROM carrinho c
     JOIN produtos p ON c.produto_id = p.id
-    WHERE c.user_id=?
+    WHERE c.user_id = ? AND (c.encomenda_id IS NULL OR c.encomenda_id = 0)
 ");
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
@@ -93,7 +93,7 @@ $produtos = $stmt->get_result();
                 <?php $subtotal = $produto['preco'] * $produto['quantidade']; ?>
                 <?php $total += $subtotal; ?>
                 <tr id="produto-<?= $produto['carrinho_id'] ?>">
-                    <td><img src="imagens/produtos/<?= $produto['imagem'] ?>" alt="<?= $produto['nome'] ?>"></td>
+                    <td><img src="/nrdetail/uploads/produtos/<?= htmlspecialchars($produto['imagem']) ?>" alt="<?= htmlspecialchars($produto['nome']) ?>"></td>
                     <td><?= $produto['nome'] ?></td>
                     <td><?= $produto['preco'] ?>€</td>
                     <td>
