@@ -30,7 +30,7 @@ if(isset($_SESSION['user'])) {
         <a href="produtos.php">Produtos</a>
         <a href="servicos.php">Serviços</a>
         <a href="contactos.php">Contactos</a>
-
+        <a href="stand.php">Stand</a>
         <?php if(isset($_SESSION['user'])): ?>
             <a href="carrinho.php">Carrinho 🛒 (<span id="contador"><?= $contador_carrinho ?></span>)</a>
             <?php if($_SESSION['user']['tipo'] === 'admin'): ?>
