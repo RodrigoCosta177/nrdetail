@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once('config/db.php');
 require_once('gerar_nota_encomenda.php');
+require_once('includes/mail_helper.php');
 
 $user_id = $_SESSION['user']['id'] ?? null;
 
@@ -14,12 +15,31 @@ if (!$user_id) {
 }
 
 /* =========================
-   BUSCAR PRODUTOS DO CARRINHO
+   BUSCAR UTILIZADOR
+========================= */
+$stmtUser = $conn->prepare("SELECT nome, email FROM users WHERE id = ? LIMIT 1");
+$stmtUser->bind_param("i", $user_id);
+$stmtUser->execute();
+$resultUser = $stmtUser->get_result();
+$user = $resultUser->fetch_assoc();
+$stmtUser->close();
+
+if (!$user) {
+    $_SESSION['mensagem_erro'] = "Utilizador não encontrado.";
+    header("Location: carrinho.php");
+    exit;
+}
+
+$nome_cliente = $user['nome'];
+$email_cliente = $user['email'];
+
+/* =========================
+   BUSCAR ITENS DO CARRINHO
 ========================= */
 $stmt = $conn->prepare("
     SELECT c.id, c.produto_id, c.quantidade, p.preco
     FROM carrinho c
-    JOIN produtos p ON c.produto_id = p.id
+    INNER JOIN produtos p ON c.produto_id = p.id
     WHERE c.user_id = ? AND (c.encomenda_id IS NULL OR c.encomenda_id = 0)
 ");
 $stmt->bind_param("i", $user_id);
@@ -36,11 +56,10 @@ while ($row = $result->fetch_assoc()) {
 
 $stmt->close();
 
-/* =========================
-   VALIDAR CARRINHO
-========================= */
 if (empty($itens)) {
-    die("O carrinho está vazio.");
+    $_SESSION['mensagem_erro'] = "O carrinho está vazio.";
+    header("Location: carrinho.php");
+    exit;
 }
 
 /* =========================
@@ -53,13 +72,18 @@ $stmtEncomenda = $conn->prepare("
     VALUES (?, ?, NOW(), ?)
 ");
 $stmtEncomenda->bind_param("ids", $user_id, $total, $estado);
-$stmtEncomenda->execute();
+
+if (!$stmtEncomenda->execute()) {
+    $_SESSION['mensagem_erro'] = "Erro ao criar a encomenda.";
+    header("Location: carrinho.php");
+    exit;
+}
 
 $encomenda_id = $stmtEncomenda->insert_id;
 $stmtEncomenda->close();
 
 /* =========================
-   LIGAR ITENS À ENCOMENDA
+   ASSOCIAR CARRINHO
 ========================= */
 $stmtUpdateCarrinho = $conn->prepare("
     UPDATE carrinho
@@ -81,7 +105,33 @@ $stmtUpdateCarrinho->close();
 gerarNotaEncomenda($conn, $encomenda_id);
 
 /* =========================
-   REDIRECIONAR PARA O PDF
+   CAMINHOS
 ========================= */
-header("Location: notas_encomenda/nota_encomenda_" . $encomenda_id . ".pdf");
+$pdf_path = __DIR__ . "/notas_encomenda/nota_encomenda_" . $encomenda_id . ".pdf";
+$pdf_url  = "notas_encomenda/nota_encomenda_" . $encomenda_id . ".pdf";
+
+/* =========================
+   ENVIAR EMAIL
+========================= */
+$enviado = enviarEmailEncomenda(
+    $email_cliente,
+    $nome_cliente,
+    $pdf_path,
+    $encomenda_id,
+    $total
+);
+
+/* =========================
+   MENSAGENS
+========================= */
+if ($enviado === true) {
+    $_SESSION['mensagem_sucesso'] = "Encomenda realizada com sucesso! PDF enviado por email.";
+} else {
+    $_SESSION['mensagem_erro'] = "Encomenda criada, mas houve erro no email.";
+}
+
+/* =========================
+   REDIRECIONAR
+========================= */
+header("Location: " . $pdf_url);
 exit;
