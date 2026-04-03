@@ -24,6 +24,50 @@ if (isset($_GET['apagar_marcacao']) && is_numeric($_GET['apagar_marcacao'])) {
 }
 
 /* =========================
+   APAGAR ENCOMENDA INDIVIDUAL
+========================= */
+if (isset($_POST['apagar_encomenda']) && is_numeric($_POST['apagar_encomenda'])) {
+    $id = (int) $_POST['apagar_encomenda'];
+
+    // Apagar itens do carrinho ligados à encomenda
+    $stmt = $conn->prepare("DELETE FROM carrinho WHERE encomenda_id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
+
+    // Apagar encomenda
+    $stmt = $conn->prepare("DELETE FROM encomendas WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->close();
+
+    header("Location: admin.php?encomenda_apagada=1");
+    exit;
+}
+
+/* =========================
+   LIMPAR ENCOMENDAS ENTREGUES
+========================= */
+if (isset($_POST['limpar_entregues'])) {
+    // Apagar itens do carrinho associados às encomendas entregues
+    $conn->query("
+        DELETE c
+        FROM carrinho c
+        INNER JOIN encomendas e ON c.encomenda_id = e.id
+        WHERE e.estado = 'Entregue'
+    ");
+
+    // Apagar encomendas entregues
+    $conn->query("
+        DELETE FROM encomendas
+        WHERE estado = 'Entregue'
+    ");
+
+    header("Location: admin.php?entregues_apagadas=1");
+    exit;
+}
+
+/* =========================
    ATUALIZAR ESTADO ENCOMENDA
 ========================= */
 if (isset($_POST['update_estado'])) {
@@ -39,7 +83,7 @@ if (isset($_POST['update_estado'])) {
         $stmt->close();
     }
 
-    header("Location: admin.php");
+    header("Location: admin.php?estado_atualizado=1");
     exit;
 }
 
@@ -74,6 +118,7 @@ if (isset($_GET['export'])) {
                 $row['servico']
             ]);
         }
+
     } elseif ($tipo === 'encomendas') {
         fputcsv($output, ['ID', 'Nome', 'Email', 'Produtos', 'Total', 'Data/Hora', 'Estado']);
 
@@ -164,6 +209,13 @@ $encomendas = $conn->query("
             margin-bottom: 35px;
         }
 
+        .top-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -206,6 +258,7 @@ $encomendas = $conn->query("
             background: #cc3333;
             color: white;
             padding: 6px 10px;
+            border: none;
             border-radius: 6px;
             text-decoration: none;
             font-weight: bold;
@@ -216,6 +269,7 @@ $encomendas = $conn->query("
         .btn-danger:hover {
             background: #a82828;
             box-shadow: 0 0 10px #cc3333;
+            transform: scale(1.05);
         }
 
         .mensagem-sucesso {
@@ -280,6 +334,11 @@ $encomendas = $conn->query("
             text-align: left;
         }
 
+        .form-inline {
+            margin: 0;
+            display: inline;
+        }
+
         @media (max-width: 900px) {
             table,
             thead,
@@ -338,6 +397,7 @@ $encomendas = $conn->query("
 <div class="admin-container">
 
     <div class="admin-links">
+        <a href="admin_dashboard.php" class="export-btn">Dashboard</a>
         <a href="admin_carros.php" class="export-btn">Gerir Carros</a>
         <a href="adicionar_carro.php" class="export-btn">Adicionar Carro</a>
         <a href="admin_produtos.php" class="export-btn">Gerir Produtos</a>
@@ -346,6 +406,18 @@ $encomendas = $conn->query("
 
     <?php if (isset($_GET['marcacao_apagada'])): ?>
         <div class="mensagem-sucesso">Marcação apagada com sucesso.</div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['encomenda_apagada'])): ?>
+        <div class="mensagem-sucesso">Encomenda apagada com sucesso.</div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['entregues_apagadas'])): ?>
+        <div class="mensagem-sucesso">Encomendas entregues removidas com sucesso.</div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['estado_atualizado'])): ?>
+        <div class="mensagem-sucesso">Estado da encomenda atualizado com sucesso.</div>
     <?php endif; ?>
 
     <h2>Marcações <a href="?export=marcacoes" class="export-btn">Exportar CSV</a></h2>
@@ -394,7 +466,17 @@ $encomendas = $conn->query("
         </tbody>
     </table>
 
-    <h2>Encomendas <a href="?export=encomendas" class="export-btn">Exportar CSV</a></h2>
+    <div class="top-actions">
+        <a href="?export=encomendas" class="export-btn">Exportar CSV</a>
+
+        <form method="post" class="form-inline" onsubmit="return confirm('Tens a certeza que queres apagar todas as encomendas entregues?');">
+            <button type="submit" name="limpar_entregues" class="btn-danger">
+                 Limpar Encomendas Entregues
+            </button>
+        </form>
+    </div>
+
+    <h2>Encomendas</h2>
     <table>
         <thead>
             <tr>
@@ -407,6 +489,7 @@ $encomendas = $conn->query("
                 <th>Estado</th>
                 <th>Atualizar</th>
                 <th>PDF</th>
+                <th>Apagar</th>
             </tr>
         </thead>
         <tbody>
@@ -470,11 +553,17 @@ $encomendas = $conn->query("
                                 <span style="color:#999;">Sem PDF</span>
                             <?php endif; ?>
                         </td>
+                        <td data-label="Apagar">
+                            <form method="post" class="form-inline" onsubmit="return confirm('Tens a certeza que queres apagar esta encomenda?');">
+                                <input type="hidden" name="apagar_encomenda" value="<?= (int) $e['id'] ?>">
+                                <button type="submit" class="btn-danger">Apagar</button>
+                            </form>
+                        </td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="9">Não existem encomendas.</td>
+                    <td colspan="10">Não existem encomendas.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
