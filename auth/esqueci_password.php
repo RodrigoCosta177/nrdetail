@@ -1,108 +1,89 @@
 <?php
-session_start();
-require_once('../config/db.php'); // ligação à BD
-require '../vendor/autoload.php'; // PHPMailer
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
+require_once('../config/db.php');
+require_once('../includes/mail_helper.php');
 
-// Mensagem que será mostrada ao utilizador
-$message = '';
+$mensagem = '';
+$erro = '';
 
-if(isset($_POST['enviar'])){
-    $email = $_POST['email'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
 
-    // Verifica se o email existe na BD
-    $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $user = $result->fetch_assoc();
-
-    if($user){
-        // Gera um token aleatório
-        $token = bin2hex(random_bytes(50));
-
-        // Guarda o token na BD (adiciona a coluna 'token_redefinir' à tabela users!)
-        $stmt = $conn->prepare("UPDATE users SET token_redefinir = ? WHERE email = ?");
-        $stmt->bind_param("ss", $token, $email);
-        $stmt->execute();
-
-        // Enviar email com PHPMailer
-        $mail = new PHPMailer(true);
-        try {
-            // Configurações do servidor SMTP
-            $mail->isSMTP();
-            $mail->Host       = 'smtp.gmail.com';       // ou outro servidor SMTP
-            $mail->SMTPAuth   = true;
-            $mail->Username   = 'teuemail@gmail.com';   // substitui pelo teu email
-            $mail->Password   = 'senha_app_email';      // app password ou senha
-            $mail->SMTPSecure = 'tls';
-            $mail->Port       = 587;
-
-            // Destinatário
-            $mail->setFrom('teuemail@gmail.com', 'NRDETAIL');
-            $mail->addAddress($email);
-
-            // Conteúdo do email
-            $mail->isHTML(true);
-            $mail->Subject = 'Redefinir Password';
-            $mail->Body    = "
-                Olá!<br><br>
-                Clique no link abaixo para redefinir a sua password:<br>
-                <a href='http://localhost/nrdetail/auth/redefinir_password.php?token=$token'>
-                    Redefinir Password
-                </a><br><br>
-                Se não solicitou, ignore este email.
-            ";
-
-            $mail->send();
-            $message = "Foi enviado um email para $email com instruções para redefinir a password.";
-        } catch (Exception $e) {
-            $message = "Erro ao enviar email: {$mail->ErrorInfo}";
-        }
-
+    if (empty($email)) {
+        $erro = 'Por favor, introduz o teu email.';
     } else {
-        $message = "Email não encontrado na base de dados.";
+        $stmt = $conn->prepare("SELECT id, nome, email FROM users WHERE email = ? LIMIT 1");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $user = $result->fetch_assoc();
+        $stmt->close();
+
+        if ($user) {
+            $token = bin2hex(random_bytes(32));
+            $expira = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+            $stmt = $conn->prepare("UPDATE users SET reset_token = ?, reset_expira = ? WHERE id = ?");
+            $stmt->bind_param("ssi", $token, $expira, $user['id']);
+            $stmt->execute();
+            $stmt->close();
+
+            $linkReset = 'http://localhost/nrdetail/auth/redefinir_password.php?token=' . urlencode($token);
+
+            $envio = enviarEmailRecuperacaoPassword(
+                $user['email'],
+                $user['nome'],
+                $linkReset
+            );
+
+            if ($envio === true) {
+                $mensagem = 'Foi enviado um email para recuperares a tua password.';
+            } else {
+                $erro = 'Erro ao enviar email: ' . $envio;
+            }
+        } else {
+            $erro = 'Não existe nenhuma conta com esse email.';
+        }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Esqueci a Password</title>
-    <link rel="stylesheet" href="../css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        /* Centrar formulário na tela */
-        .login-form-scope {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            width: 100%;
-        }
-    </style>
+    <title>Recuperar Password - NR Detail</title>
+    <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+
 <div class="login-form-scope">
     <div class="form-container">
-        <h1>Esqueci a Password</h1>
+        <h1>Recuperar Password</h1>
 
-        <?php if($message) echo "<p class='error'>$message</p>"; ?>
+        <?php if (!empty($mensagem)): ?>
+            <p class="mensagem-sucesso"><?= htmlspecialchars($mensagem) ?></p>
+        <?php endif; ?>
 
-        <form method="POST">
+        <?php if (!empty($erro)): ?>
+            <p class="error"><?= htmlspecialchars($erro) ?></p>
+        <?php endif; ?>
+
+        <form method="post">
             <div class="input-group">
-                <input type="email" name="email" required placeholder=" ">
+                <input type="email" name="email" placeholder=" " required>
                 <label>Email</label>
             </div>
-            <button type="submit" name="enviar">Enviar</button>
+
+            <button type="submit">Enviar Link</button>
         </form>
 
-        <p><a href="login.php">Voltar ao Login</a></p>
+        <p><a href="login.php">Voltar ao login</a></p>
     </div>
 </div>
+
 </body>
 </html>

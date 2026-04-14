@@ -600,3 +600,362 @@ button:hover, .export-btn:hover {
 .btn-stand:hover {
     background: #e6b800;
 }
+
+/* =========================
+   CARRINHO NOVO
+========================= */
+.carrinho-page {
+    padding: 40px 20px 70px;
+    background: #111;
+}
+
+.carrinho-container {
+    width: 100%;
+    max-width: 1150px;
+    margin: 0 auto;
+    color: white;
+}
+
+.carrinho-topo {
+    margin-bottom: 25px;
+}
+
+.carrinho-topo h1 {
+    font-size: 34px;
+    color: #ffcc00;
+    margin-bottom: 8px;
+}
+
+.carrinho-topo p {
+    color: #bbb;
+    font-size: 15px;
+}
+
+.carrinho-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.carrinho-item {
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 130px 1fr 220px;
+    gap: 20px;
+    align-items: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+}
+
+.carrinho-imagem img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 12px;
+    background: #0f0f0f;
+}
+
+.carrinho-info h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.carrinho-preco-unitario {
+    color: #cfcfcf;
+    font-size: 15px;
+}
+
+.carrinho-preco-unitario strong {
+    color: #ffcc00;
+}
+
+.carrinho-lateral {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-end;
+}
+
+.quantidade-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-quantidade,
+.btn-eliminar,
+.btn-compra,
+.btn-continuar-comprar {
+    transition: all 0.25s ease;
+}
+
+.btn-quantidade {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: none;
+    background: #ffcc00;
+    color: black;
+    font-weight: bold;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.btn-quantidade:hover {
+    background: #e6b800;
+    transform: scale(1.05);
+}
+
+.quantidade {
+    min-width: 34px;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: #fff;
+}
+
+.carrinho-subtotal {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+}
+
+.carrinho-subtotal span {
+    font-size: 13px;
+    color: #aaa;
+}
+
+.carrinho-subtotal strong {
+    font-size: 22px;
+    color: #fff;
+}
+
+.btn-eliminar {
+    border: none;
+    background: #aa2c2c;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-eliminar:hover {
+    background: #8c2020;
+    transform: scale(1.03);
+}
+
+.carrinho-resumo {
+    margin-top: 28px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.resumo-box {
+    width: 100%;
+    max-width: 380px;
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.15);
+}
+
+.resumo-box p {
+    color: #bbb;
+    margin-bottom: 10px;
+}
+
+.resumo-box h2 {
+    color: #ffcc00;
+    font-size: 34px;
+    margin-bottom: 18px;
+}
+
+.btn-compra {
+    width: 100%;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    background: #ffcc00;
+    color: black;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.btn-compra:hover {
+    background: #e6b800;
+    transform: translateY(-1px);
+}
+
+.carrinho-vazio {
+    background: #1b1b1b;
+    border: 1px solid #2a2a2a;
+    border-radius: 16px;
+    padding: 35px 20px;
+    text-align: center;
+}
+
+.carrinho-vazio h3 {
+    color: #ffcc00;
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+.carrinho-vazio p {
+    color: #ccc;
+    margin-bottom: 18px;
+}
+
+.btn-continuar-comprar {
+    display: inline-block;
+    text-decoration: none;
+    background: #ffcc00;
+    color: black;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+.btn-continuar-comprar:hover {
+    background: #e6b800;
+}
+
+.carrinho-acoes-mobile {
+    display: none;
+}
+
+.mensagem-sucesso,
+.mensagem-erro {
+    padding: 12px 14px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.mensagem-sucesso {
+    background: #1f4d2e;
+    color: #d4ffd4;
+}
+
+.mensagem-erro {
+    background: #5a1f1f;
+    color: #ffd4d4;
+}
+
+/* =========================
+   RESPONSIVO CARRINHO
+========================= */
+@media (max-width: 900px) {
+    .carrinho-item {
+        grid-template-columns: 100px 1fr;
+    }
+
+    .carrinho-lateral {
+        grid-column: 1 / -1;
+        align-items: flex-start;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        padding-top: 8px;
+    }
+
+    .carrinho-subtotal {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .carrinho-page {
+        padding: 25px 14px 50px;
+    }
+
+    .carrinho-topo h1 {
+        font-size: 28px;
+    }
+
+    .carrinho-item {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding: 16px;
+    }
+
+    .carrinho-imagem img {
+        height: 180px;
+    }
+
+    .carrinho-lateral {
+        display: none;
+    }
+
+    .carrinho-acoes-mobile {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .quantidade-desktop,
+    .btn-eliminar-desktop {
+        display: none !important;
+    }
+
+    .resumo-box {
+        max-width: 100%;
+    }
+
+    .resumo-box h2 {
+        font-size: 28px;
+    }
+
+    .btn-compra {
+        font-size: 15px;
+    }
+}
+
+#menu-btn {
+    display: none;
+    font-size: 26px;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+
+/* MOBILE */
+@media (max-width: 768px) {
+
+    header {
+        flex-wrap: wrap;
+    }
+
+    #menu-btn {
+        display: block;
+    }
+
+    #menu {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        margin-top: 15px;
+    }
+
+    #menu a {
+        display: block;
+        margin: 10px 0;
+    }
+
+    #menu.active {
+        display: flex;
+    }
+}

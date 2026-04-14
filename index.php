@@ -38,6 +38,7 @@ $produtosDestaque = $conn->query("
 <head>
     <meta charset="UTF-8">
     <title>NR Detail - Detailing Automóvel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Ficheiro CSS principal do projeto -->
     <link rel="stylesheet" href="<?= $root ?>/css/style.css">

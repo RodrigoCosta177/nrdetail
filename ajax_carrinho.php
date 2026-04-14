@@ -87,7 +87,7 @@ if ($acao === 'mais') {
         echo json_encode([
             'status' => 'ok',
             'acao' => 'eliminar',
-            'total' => number_format($resTotal['total'] ?? 0, 2, '.', '')
+            'total' => number_format((float)($resTotal['total'] ?? 0), 2, '.', '')
         ]);
         exit;
     }
@@ -112,7 +112,7 @@ if ($acao === 'mais') {
     echo json_encode([
         'status' => 'ok',
         'acao' => 'eliminar',
-        'total' => number_format($resTotal['total'] ?? 0, 2, '.', '')
+        'total' => number_format((float)($resTotal['total'] ?? 0), 2, '.', '')
     ]);
     exit;
 } else {
@@ -156,5 +156,5 @@ echo json_encode([
     'acao' => $acao,
     'quantidade' => (int)($atual['quantidade'] ?? 0),
     'subtotal' => number_format($subtotal, 2, '.', ''),
-    'total' => number_format($resTotal['total'] ?? 0, 2, '.', '')
+    'total' => number_format((float)($resTotal['total'] ?? 0), 2, '.', '')
 ]);

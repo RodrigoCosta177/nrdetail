@@ -1,63 +1,97 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 require_once('../config/db.php');
 
 $token = $_GET['token'] ?? '';
-$error = '';
-$success = '';
+$erro = '';
+$mensagem = '';
 
-if(!$token){
-    die("Token inválido!");
+if (empty($token)) {
+    die('Token inválido.');
 }
 
-if(isset($_POST['redefinir'])){
-    // Hash da nova password
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+$stmt = $conn->prepare("SELECT id, reset_expira FROM users WHERE reset_token = ? LIMIT 1");
+$stmt->bind_param("s", $token);
+$stmt->execute();
+$result = $stmt->get_result();
+$user = $result->fetch_assoc();
+$stmt->close();
 
-    // Atualizar password na BD e limpar token
-    $stmt = $conn->prepare("UPDATE users SET password=?, token_redefinir=NULL, validade_token=NULL WHERE token_redefinir=? AND validade_token > NOW()");
-    $stmt->bind_param("ss",$password,$token);
-    $stmt->execute();
+if (!$user) {
+    die('Token inválido ou inexistente.');
+}
 
-    if($stmt->affected_rows>0){
-        $success = "Palavra-passe redefinida com sucesso! <a href='login.php'>Fazer login</a>";
+if (strtotime($user['reset_expira']) < time()) {
+    die('Este link já expirou.');
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $nova_password = $_POST['nova_password'] ?? '';
+    $confirmar_password = $_POST['confirmar_password'] ?? '';
+
+    if (empty($nova_password) || empty($confirmar_password)) {
+        $erro = 'Preenche todos os campos.';
+    } elseif ($nova_password !== $confirmar_password) {
+        $erro = 'As passwords não coincidem.';
+    } elseif (strlen($nova_password) < 6) {
+        $erro = 'A password deve ter pelo menos 6 caracteres.';
     } else {
-        $error = "Token inválido ou expirado!";
+        $hash = password_hash($nova_password, PASSWORD_DEFAULT);
+
+        $stmt = $conn->prepare("
+            UPDATE users
+            SET password = ?, reset_token = NULL, reset_expira = NULL
+            WHERE id = ?
+        ");
+        $stmt->bind_param("si", $hash, $user['id']);
+        $stmt->execute();
+        $stmt->close();
+
+        $mensagem = 'Password alterada com sucesso. Já podes iniciar sessão.';
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Redefinir password</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Usar todo o CSS completo do site -->
+    <title>Redefinir Password - NR Detail</title>
     <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
 
-<!-- Escopo para aplicar o CSS do login -->
 <div class="login-form-scope">
     <div class="form-container">
-        <h1>Redefinir password</h1>
+        <h1>Redefinir Password</h1>
 
-        <?php if($error) echo "<p class='error'>$error</p>"; ?>
+        <?php if (!empty($mensagem)): ?>
+            <p class="mensagem-sucesso"><?= htmlspecialchars($mensagem) ?></p>
+            <p><a href="login.php">Ir para o login</a></p>
+        <?php else: ?>
 
-        <?php if($success){ 
-            echo "<p style='color:#ffcc00;'>$success</p>"; 
-        } else { ?>
-            <form method="POST">
+            <?php if (!empty($erro)): ?>
+                <p class="error"><?= htmlspecialchars($erro) ?></p>
+            <?php endif; ?>
+
+            <form method="post">
                 <div class="input-group">
-                    <input type="password" name="password" required placeholder=" ">
-                    <label>Nova password</label>
+                    <input type="password" name="nova_password" placeholder=" " required>
+                    <label>Nova Password</label>
                 </div>
-                <button type="submit" name="redefinir">Redefinir</button>
-                <p style="margin-top:10px; font-size:13px; text-align:right;">
-                    <a href="login.php">Voltar ao login</a>
-                </p>
+
+                <div class="input-group">
+                    <input type="password" name="confirmar_password" placeholder=" " required>
+                    <label>Confirmar Password</label>
+                </div>
+
+                <button type="submit">Guardar Password</button>
             </form>
-        <?php } ?>
+
+        <?php endif; ?>
     </div>
 </div>
 

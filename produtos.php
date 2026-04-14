@@ -13,6 +13,7 @@ $produtos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
     <title>Produtos - NR Detail</title>
     <link rel="stylesheet" href="/nrdetail/css/style.css">
