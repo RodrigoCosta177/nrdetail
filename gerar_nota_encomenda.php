@@ -53,7 +53,7 @@ function gerarNotaEncomenda($conn, $encomenda_id)
     $corClaro = [245, 245, 245];
     $corDestaque = [255, 204, 0];
 
-    $logoPath = __DIR__ . '/imagens/logo.png';
+    $logoPath = __DIR__ . '/imagens/logo_1.png';
 
     /* =========================
        TOPO

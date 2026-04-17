@@ -8,9 +8,11 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/config/db.php');
 
 // Contador do carrinho
 $contador_carrinho = 0;
+$nome_user = '';
 
 if (isset($_SESSION['user'])) {
     $user_id = $_SESSION['user']['id'];
+    $nome_user = explode(' ', trim($_SESSION['user']['nome']))[0];
 
     $sql = "
         SELECT SUM(quantidade) AS total
@@ -44,13 +46,18 @@ if (isset($_SESSION['user'])) {
         <a href="contactos.php">Contactos</a>
         <a href="stand.php">Stand</a>
 
-        <?php if (isset($_SESSION['user'])): ?>
+
             <a href="carrinho.php">
                 Carrinho 🛒
                 <?php if ($contador_carrinho > 0): ?>
                     (<span id="contador"><?= $contador_carrinho ?></span>)
                 <?php endif; ?>
             </a>
+
+         <?php if (isset($_SESSION['user'])): ?>
+            <a href="minha_conta.php">Meu Perfil</a>
+
+            <span class="user-nome">Olá, <?= htmlspecialchars($nome_user) ?></span>
 
             <?php if ($_SESSION['user']['tipo'] === 'admin'): ?>
                 <a href="admin.php" class="admin-btn">Admin</a>
@@ -108,6 +115,12 @@ header nav a:hover {
     color: #ffcc00;
 }
 
+.user-nome {
+    margin-left: 20px;
+    font-weight: bold;
+    color: #ffcc00;
+}
+
 .admin-btn {
     background: #ffcc00;
     color: black !important;
@@ -153,7 +166,8 @@ header nav a:hover {
         padding-top: 10px;
     }
 
-    #menu a {
+    #menu a,
+    #menu .user-nome {
         margin: 10px 0;
         margin-left: 0;
         width: 100%;

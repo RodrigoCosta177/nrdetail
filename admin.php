@@ -403,6 +403,7 @@ $encomendas = $conn->query("
         <a href="adicionar_carro.php" class="export-btn">Adicionar Carro</a>
         <a href="admin_produtos.php" class="export-btn">Gerir Produtos</a>
         <a href="adicionar_produto.php" class="export-btn">Adicionar Produto</a>
+        <a href="admin_disponibilidade.php" class="export-btn">Gerir Disponibilidade</a>
     </div>
 
     <?php if (isset($_GET['marcacao_apagada'])): ?>
