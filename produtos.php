@@ -5,10 +5,49 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once('config/db.php');
 
-// Puxar todos os produtos
-$sql = "SELECT * FROM produtos ORDER BY id DESC";
-$result = $conn->query($sql);
+/* =========================
+   FILTROS
+========================= */
+$categorias_validas = ['jantes', 'interior', 'pintura', 'lavagem'];
+$categorias_selecionadas = [];
+
+if (!empty($_GET['categoria']) && is_array($_GET['categoria'])) {
+    foreach ($_GET['categoria'] as $categoria) {
+        $categoria = trim($categoria);
+        if (in_array($categoria, $categorias_validas)) {
+            $categorias_selecionadas[] = $categoria;
+        }
+    }
+}
+
+$categorias_selecionadas = array_unique($categorias_selecionadas);
+
+/* =========================
+   QUERY PRODUTOS
+========================= */
+$sql = "SELECT * FROM produtos";
+$params = [];
+$types = '';
+
+if (!empty($categorias_selecionadas)) {
+    $placeholders = implode(',', array_fill(0, count($categorias_selecionadas), '?'));
+    $sql .= " WHERE categoria IN ($placeholders)";
+    $params = $categorias_selecionadas;
+    $types = str_repeat('s', count($categorias_selecionadas));
+}
+
+$sql .= " ORDER BY id DESC";
+
+$stmt = $conn->prepare($sql);
+
+if (!empty($params)) {
+    $stmt->bind_param($types, ...$params);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
 $produtos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -55,6 +94,103 @@ $produtos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
         .produto-card button:hover {
             background: #e6b800;
         }
+
+        .filtros-form {
+            max-width: 1200px;
+            margin: 25px auto 10px;
+            background: #1a1a1a;
+            border: 1px solid #2b2b2b;
+            border-radius: 14px;
+            padding: 18px;
+        }
+
+        .filtros-form h3 {
+            color: #ffcc00;
+            margin-bottom: 14px;
+            font-size: 20px;
+        }
+
+        .filtros-opcoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .filtro-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: white;
+        }
+
+        .filtro-item input[type="checkbox"] {
+            accent-color: #ffcc00;
+            width: 16px;
+            height: 16px;
+        }
+
+        .filtros-botoes {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-filtro,
+        .btn-limpar {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.25s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-filtro {
+            background: #ffcc00;
+            color: black;
+        }
+
+        .btn-filtro:hover {
+            background: #e6b800;
+        }
+
+        .btn-limpar {
+            background: #2a2a2a;
+            color: white;
+        }
+
+        .btn-limpar:hover {
+            background: #3a3a3a;
+        }
+
+        .resultado-filtros {
+            max-width: 1200px;
+            margin: 0 auto 20px;
+            color: #bbb;
+        }
+
+        @media (max-width: 768px) {
+            .filtros-opcoes {
+                flex-direction: column;
+            }
+
+            .filtros-botoes {
+                flex-direction: column;
+            }
+
+            .btn-filtro,
+            .btn-limpar {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
@@ -78,18 +214,56 @@ $produtos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 <section class="produtos-page">
     <h1>Nossos Produtos</h1>
 
-    <div class="filtros">
-        <button type="button" onclick="filtrar('todos')">Todos</button>
-        <button type="button" onclick="filtrar('jantes')">Jantes</button>
-        <button type="button" onclick="filtrar('interior')">Interior</button>
-        <button type="button" onclick="filtrar('pintura')">Pintura</button>
-        <button type="button" onclick="filtrar('lavagem')">Lavagem</button>
+    <form method="GET" class="filtros-form">
+        <h3>Filtrar por categoria</h3>
+
+        <div class="filtros-opcoes">
+            <label class="filtro-item">
+                <input type="checkbox" name="categoria[]" value="jantes"
+                    <?= in_array('jantes', $categorias_selecionadas) ? 'checked' : '' ?>>
+                Jantes
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" name="categoria[]" value="interior"
+                    <?= in_array('interior', $categorias_selecionadas) ? 'checked' : '' ?>>
+                Interior
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" name="categoria[]" value="pintura"
+                    <?= in_array('pintura', $categorias_selecionadas) ? 'checked' : '' ?>>
+                Pintura
+            </label>
+
+            <label class="filtro-item">
+                <input type="checkbox" name="categoria[]" value="lavagem"
+                    <?= in_array('lavagem', $categorias_selecionadas) ? 'checked' : '' ?>>
+                Lavagem
+            </label>
+        </div>
+
+        <div class="filtros-botoes">
+            <button type="submit" class="btn-filtro">Aplicar Filtros</button>
+            <a href="produtos.php" class="btn-limpar">Limpar Filtros</a>
+        </div>
+    </form>
+
+    <div class="resultado-filtros">
+        <?php if (!empty($categorias_selecionadas)): ?>
+            <p>
+                Filtros ativos:
+                <strong><?= htmlspecialchars(implode(', ', $categorias_selecionadas)) ?></strong>
+            </p>
+        <?php else: ?>
+            <p>A mostrar todos os produtos.</p>
+        <?php endif; ?>
     </div>
 
     <div class="produtos-grid">
         <?php if (!empty($produtos)): ?>
             <?php foreach ($produtos as $produto): ?>
-                <div class="produto-card <?= htmlspecialchars($produto['categoria']) ?>">
+                <div class="produto-card">
                     <img
                         src="/nrdetail/imagens/produtos/<?= htmlspecialchars($produto['imagem']) ?>"
                         alt="<?= htmlspecialchars($produto['nome']) ?>"
@@ -98,31 +272,18 @@ $produtos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
                     <h3><?= htmlspecialchars($produto['nome']) ?></h3>
                     <p class="preco"><?= number_format((float)$produto['preco'], 2, ',', '.') ?>€</p>
 
-                    <form action="adicionar_carrinho.php" method="post">
-                        <input type="hidden" name="produto_id" value="<?= (int)$produto['id'] ?>">
-                        <button type="submit">Adicionar ao Carrinho</button>
-                    </form>
+                                <form class="form-add-carrinho" action="adicionar_carrinho.php" method="post">
+                    <input type="hidden" name="produto_id" value="<?= (int)$produto['id'] ?>">
+                    <input type="hidden" name="ajax" value="1">
+                    <button type="submit" class="btn-add-cart">Adicionar ao Carrinho</button>
+                </form>
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p>Não existem produtos disponíveis de momento.</p>
+            <p>Não existem produtos disponíveis para os filtros selecionados.</p>
         <?php endif; ?>
     </div>
 </section>
-
-<script>
-function filtrar(categoria) {
-    let produtos = document.querySelectorAll('.produto-card');
-
-    produtos.forEach(produto => {
-        if (categoria === 'todos' || produto.classList.contains(categoria)) {
-            produto.style.display = 'block';
-        } else {
-            produto.style.display = 'none';
-        }
-    });
-}
-</script>
 
 <footer class="footer">
     <div class="footer-container">
@@ -141,6 +302,49 @@ function filtrar(categoria) {
         </div>
     </div>
 </footer>
+
+<script>
+document.querySelectorAll('.form-add-carrinho').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const botao = this.querySelector('.btn-add-cart');
+        const formData = new FormData(this);
+
+        botao.disabled = true;
+        const textoOriginal = botao.innerText;
+        botao.innerText = 'A adicionar...';
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok') {
+    if (typeof atualizarMiniCarrinhoUI === 'function') {
+        atualizarMiniCarrinhoUI();
+    }
+
+    if (typeof abrirMiniCarrinho === 'function') {
+        abrirMiniCarrinho();
+    }
+
+    if (typeof animarMiniCarrinho === 'function') {
+        animarMiniCarrinho();
+    }
+}
+        })
+        .catch(() => {
+            alert('Erro ao comunicar com o servidor.');
+        })
+        .finally(() => {
+            botao.disabled = false;
+            botao.innerText = textoOriginal;
+        });
+    });
+});
+</script>
 
 </body>
 </html>

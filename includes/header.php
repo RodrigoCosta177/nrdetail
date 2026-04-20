@@ -3,10 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Conexão à base de dados
 require_once($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/config/db.php');
 
-// Contador do carrinho
 $contador_carrinho = 0;
 $nome_user = '';
 
@@ -27,6 +25,10 @@ if (isset($_SESSION['user'])) {
     $res = $stmt->get_result()->fetch_assoc();
     $contador_carrinho = (int)($res['total'] ?? 0);
     $stmt->close();
+} else {
+    if (!empty($_SESSION['carrinho_guest']) && is_array($_SESSION['carrinho_guest'])) {
+        $contador_carrinho = array_sum($_SESSION['carrinho_guest']);
+    }
 }
 ?>
 
@@ -46,18 +48,18 @@ if (isset($_SESSION['user'])) {
         <a href="contactos.php">Contactos</a>
         <a href="stand.php">Stand</a>
 
+        <button type="button" id="theme-toggle" class="theme-toggle-header" aria-label="Alternar tema">
+            🌙
+        </button>
 
-            <a href="carrinho.php">
-                Carrinho 🛒
-                <?php if ($contador_carrinho > 0): ?>
-                    (<span id="contador"><?= $contador_carrinho ?></span>)
-                <?php endif; ?>
-            </a>
-
-         <?php if (isset($_SESSION['user'])): ?>
+        <?php if (isset($_SESSION['user'])): ?>
             <a href="minha_conta.php">Meu Perfil</a>
 
             <span class="user-nome">Olá, <?= htmlspecialchars($nome_user) ?></span>
+
+            <a href="carrinho.php" id="cart-toggle">
+                Carrinho 🛒 (<span id="contador"><?= $contador_carrinho ?></span>)
+            </a>
 
             <?php if ($_SESSION['user']['tipo'] === 'admin'): ?>
                 <a href="admin.php" class="admin-btn">Admin</a>
@@ -65,6 +67,9 @@ if (isset($_SESSION['user'])) {
 
             <a href="auth/logout.php">Logout</a>
         <?php else: ?>
+            <a href="carrinho.php" id="cart-toggle">
+                Carrinho 🛒 (<span id="contador"><?= $contador_carrinho ?></span>)
+            </a>
             <a href="auth/login.php">Login</a>
         <?php endif; ?>
     </nav>
@@ -72,8 +77,8 @@ if (isset($_SESSION['user'])) {
 
 <style>
 header {
-    background: #111;
-    color: white;
+    background: var(--surface, #111);
+    color: var(--text, #fff);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -82,12 +87,10 @@ header {
     position: sticky;
     top: 0;
     z-index: 1000;
+    border-bottom: 1px solid var(--border, #222);
 }
 
 header .logo {
-    font-size: 24px;
-    font-weight: bold;
-    color: #ffcc00;
     display: flex;
     align-items: center;
 }
@@ -105,25 +108,25 @@ header nav {
 }
 
 header nav a {
-    color: white;
+    color: var(--text, #fff);
     text-decoration: none;
     margin-left: 20px;
     transition: 0.3s;
 }
 
 header nav a:hover {
-    color: #ffcc00;
+    color: var(--accent, #ffcc00);
 }
 
 .user-nome {
     margin-left: 20px;
     font-weight: bold;
-    color: #ffcc00;
+    color: var(--accent, #ffcc00);
 }
 
 .admin-btn {
-    background: #ffcc00;
-    color: black !important;
+    background: var(--accent, #ffcc00);
+    color: #111 !important;
     padding: 5px 12px;
     border-radius: 6px;
     font-weight: bold;
@@ -131,7 +134,29 @@ header nav a:hover {
 }
 
 .admin-btn:hover {
-    background: #e6b800;
+    background: var(--accent-hover, #e6b800);
+}
+
+.theme-toggle-header {
+    margin-left: 20px;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid var(--border, #2d2d2d);
+    background: var(--surface-2, #1b1b1b);
+    color: var(--text, #fff);
+    font-size: 18px;
+    cursor: pointer;
+    transition: 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-toggle-header:hover {
+    border-color: var(--accent, #ffcc00);
+    color: var(--accent, #ffcc00);
+    transform: translateY(-1px);
 }
 
 #menu-btn {
@@ -139,12 +164,11 @@ header nav a:hover {
     font-size: 28px;
     background: none;
     border: none;
-    color: white;
+    color: var(--text, #fff);
     cursor: pointer;
     line-height: 1;
 }
 
-/* MOBILE */
 @media (max-width: 768px) {
     header {
         flex-wrap: wrap;
@@ -161,13 +185,14 @@ header nav a:hover {
         flex-direction: column;
         align-items: flex-start;
         margin-top: 15px;
-        background: #111;
-        border-top: 1px solid #222;
+        background: var(--surface, #111);
+        border-top: 1px solid var(--border, #222);
         padding-top: 10px;
     }
 
     #menu a,
-    #menu .user-nome {
+    #menu .user-nome,
+    #menu .theme-toggle-header {
         margin: 10px 0;
         margin-left: 0;
         width: 100%;
@@ -188,15 +213,63 @@ header nav a:hover {
 }
 </style>
 
+<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/mini_carrinho.php'); ?>
+
+</header>
+
+<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/mini_carrinho.php'); ?>
+
+<style>
+...
+</style>
+
+<script>
+...
+</script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const menuBtn = document.getElementById("menu-btn");
     const menu = document.getElementById("menu");
+    const cartToggle = document.getElementById("cart-toggle");
+    const btn = document.getElementById("theme-toggle");
 
     if (menuBtn && menu) {
         menuBtn.addEventListener("click", function () {
             menu.classList.toggle("active");
         });
     }
+
+    const savedTheme = localStorage.getItem('nrdetail_theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
+
+    function atualizarIconeTema() {
+        const temaAtual = document.body.getAttribute('data-theme') || 'dark';
+        if (btn) {
+            btn.textContent = temaAtual === 'dark' ? '☀️' : '🌙';
+        }
+    }
+
+    atualizarIconeTema();
+
+    if (btn) {
+        btn.addEventListener('click', function () {
+            const atual = document.body.getAttribute('data-theme') || 'dark';
+            const novo = atual === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', novo);
+            localStorage.setItem('nrdetail_theme', novo);
+            atualizarIconeTema();
+        });
+    }
+
+    if (cartToggle) {
+        cartToggle.addEventListener('click', function (e) {
+            if (typeof abrirMiniCarrinho === 'function') {
+                e.preventDefault();
+                abrirMiniCarrinho();
+            }
+        });
+    }
 });
+
 </script>
