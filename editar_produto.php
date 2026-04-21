@@ -29,7 +29,7 @@ if ($result->num_rows === 0) {
     exit;
 }
 
-$produto = $result->fetch_assoc();
+$produtoEditar = $result->fetch_assoc();
 $stmt->close();
 
 $erro = '';
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoria = trim($_POST['categoria'] ?? '');
     $descricao = trim($_POST['descricao'] ?? '');
 
-    $imagem = $produto['imagem'];
+    $imagem = $produtoEditar['imagem'] ?? '';
 
     if (empty($nome) || $preco <= 0 || empty($categoria)) {
         $erro = "Preenche todos os campos obrigatórios corretamente.";
@@ -73,8 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $destino = 'uploads/produtos/' . $novoNomeImagem;
 
                 if (move_uploaded_file($tmpName, $destino)) {
-                    if (!empty($produto['imagem'])) {
-                        $imagemAntiga = 'uploads/produtos/' . $produto['imagem'];
+                    if (!empty($produtoEditar['imagem'])) {
+                        $imagemAntiga = 'uploads/produtos/' . $produtoEditar['imagem'];
                         if (file_exists($imagemAntiga)) {
                             unlink($imagemAntiga);
                         }
@@ -252,29 +252,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="nome">Nome do Produto</label>
-                <input type="text" name="nome" id="nome" value="<?= htmlspecialchars($produto['nome']) ?>" required>
+                <input type="text" name="nome" id="nome" value="<?= htmlspecialchars($produtoEditar['nome'] ?? '') ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="preco">Preço (€)</label>
-                <input type="number" step="0.01" name="preco" id="preco" value="<?= htmlspecialchars($produto['preco']) ?>" required>
+                <input type="number" step="0.01" name="preco" id="preco" value="<?= htmlspecialchars($produtoEditar['preco'] ?? '') ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="categoria">Categoria</label>
-                <input type="text" name="categoria" id="categoria" value="<?= htmlspecialchars($produto['categoria']) ?>" required>
+                <input type="text" name="categoria" id="categoria" value="<?= htmlspecialchars($produtoEditar['categoria'] ?? '') ?>" required>
             </div>
 
             <div class="form-group">
                 <label for="descricao">Descrição</label>
-                <textarea name="descricao" id="descricao"><?= htmlspecialchars($produto['descricao'] ?? '') ?></textarea>
+                <textarea name="descricao" id="descricao"><?= htmlspecialchars($produtoEditar['descricao'] ?? '') ?></textarea>
             </div>
 
             <div class="form-group">
                 <label>Imagem atual</label>
                 <div class="img-preview">
-                    <?php if (!empty($produto['imagem']) && file_exists('uploads/produtos/' . $produto['imagem'])): ?>
-                        <img src="uploads/produtos/<?= htmlspecialchars($produto['imagem']) ?>" alt="Imagem do produto">
+                    <?php if (!empty($produtoEditar['imagem']) && file_exists('uploads/produtos/' . $produtoEditar['imagem'])): ?>
+                        <img src="uploads/produtos/<?= htmlspecialchars($produtoEditar['imagem']) ?>" alt="Imagem do produto">
                     <?php else: ?>
                         <p class="small-text">Sem imagem.</p>
                     <?php endif; ?>
