@@ -48,10 +48,6 @@ if (isset($_SESSION['user'])) {
         <a href="contactos.php">Contactos</a>
         <a href="stand.php">Stand</a>
 
-        <button type="button" id="theme-toggle" class="theme-toggle-header" aria-label="Alternar tema">
-            🌙
-        </button>
-
         <?php if (isset($_SESSION['user'])): ?>
             <a href="minha_conta.php">Meu Perfil</a>
 
@@ -137,27 +133,6 @@ header nav a:hover {
     background: var(--accent-hover, #e6b800);
 }
 
-.theme-toggle-header {
-    margin-left: 20px;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
-    border: 1px solid var(--border, #2d2d2d);
-    background: var(--surface-2, #1b1b1b);
-    color: var(--text, #fff);
-    font-size: 18px;
-    cursor: pointer;
-    transition: 0.25s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.theme-toggle-header:hover {
-    border-color: var(--accent, #ffcc00);
-    color: var(--accent, #ffcc00);
-    transform: translateY(-1px);
-}
 
 #menu-btn {
     display: none;
@@ -224,7 +199,7 @@ header nav a:hover {
 </style>
 
 <script>
-...
+... 
 </script>
 
 <script>
@@ -240,27 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    const savedTheme = localStorage.getItem('nrdetail_theme') || 'dark';
-    document.body.setAttribute('data-theme', savedTheme);
 
-    function atualizarIconeTema() {
-        const temaAtual = document.body.getAttribute('data-theme') || 'dark';
-        if (btn) {
-            btn.textContent = temaAtual === 'dark' ? '☀️' : '🌙';
-        }
-    }
-
-    atualizarIconeTema();
-
-    if (btn) {
-        btn.addEventListener('click', function () {
-            const atual = document.body.getAttribute('data-theme') || 'dark';
-            const novo = atual === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', novo);
-            localStorage.setItem('nrdetail_theme', novo);
-            atualizarIconeTema();
-        });
-    }
 
     if (cartToggle) {
         cartToggle.addEventListener('click', function (e) {

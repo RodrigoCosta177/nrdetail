@@ -7,6 +7,34 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['tipo'] != 'admin') {
 }
 
 require_once('config/db.php');
+require_once('includes/mail_helper.php');
+
+/* =========================
+   CONFIG ESTADOS
+========================= */
+$estado_labels = [
+    'pendente' => 'Pendente',
+    'processada' => 'Em processamento',
+    'pronta_levantamento' => 'Pronta para levantamento',
+    'concluida' => 'Concluída',
+    'cancelada' => 'Cancelada'
+];
+
+$estado_classes = [
+    'pendente' => 'estado-pendente',
+    'processada' => 'estado-processada',
+    'pronta_levantamento' => 'estado-pronta',
+    'concluida' => 'estado-concluida',
+    'cancelada' => 'estado-cancelada'
+];
+
+$transicoes_validas = [
+    'pendente' => ['processada', 'cancelada'],
+    'processada' => ['pronta_levantamento', 'cancelada'],
+    'pronta_levantamento' => ['concluida', 'cancelada'],
+    'concluida' => [],
+    'cancelada' => []
+];
 
 /* =========================
    APAGAR MARCAÇÃO
@@ -29,13 +57,11 @@ if (isset($_GET['apagar_marcacao']) && is_numeric($_GET['apagar_marcacao'])) {
 if (isset($_POST['apagar_encomenda']) && is_numeric($_POST['apagar_encomenda'])) {
     $id = (int) $_POST['apagar_encomenda'];
 
-    // Apagar itens do carrinho ligados à encomenda
     $stmt = $conn->prepare("DELETE FROM carrinho WHERE encomenda_id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $stmt->close();
 
-    // Apagar encomenda
     $stmt = $conn->prepare("DELETE FROM encomendas WHERE id = ?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
@@ -46,24 +72,22 @@ if (isset($_POST['apagar_encomenda']) && is_numeric($_POST['apagar_encomenda']))
 }
 
 /* =========================
-   LIMPAR ENCOMENDAS ENTREGUES
+   LIMPAR ENCOMENDAS CONCLUÍDAS
 ========================= */
-if (isset($_POST['limpar_entregues'])) {
-    // Apagar itens do carrinho associados às encomendas entregues
+if (isset($_POST['limpar_concluidas'])) {
     $conn->query("
         DELETE c
         FROM carrinho c
         INNER JOIN encomendas e ON c.encomenda_id = e.id
-        WHERE e.estado = 'Entregue'
+        WHERE e.estado = 'concluida'
     ");
 
-    // Apagar encomendas entregues
     $conn->query("
         DELETE FROM encomendas
-        WHERE estado = 'Entregue'
+        WHERE estado = 'concluida'
     ");
 
-    header("Location: admin.php?entregues_apagadas=1");
+    header("Location: admin.php?concluidas_apagadas=1");
     exit;
 }
 
@@ -74,16 +98,45 @@ if (isset($_POST['update_estado'])) {
     $id = isset($_POST['encomenda_id']) ? (int) $_POST['encomenda_id'] : 0;
     $novo_estado = isset($_POST['estado']) ? trim($_POST['estado']) : '';
 
-    $estados_validos = ['Pendente', 'Processada', 'Entregue'];
+    if ($id > 0 && array_key_exists($novo_estado, $estado_labels)) {
+        $stmtAtual = $conn->prepare("
+            SELECT e.estado, u.nome, u.email
+            FROM encomendas e
+            INNER JOIN users u ON e.user_id = u.id
+            WHERE e.id = ?
+            LIMIT 1
+        ");
+        $stmtAtual->bind_param("i", $id);
+        $stmtAtual->execute();
+        $resAtual = $stmtAtual->get_result()->fetch_assoc();
+        $stmtAtual->close();
 
-    if ($id > 0 && in_array($novo_estado, $estados_validos)) {
-        $stmt = $conn->prepare("UPDATE encomendas SET estado = ? WHERE id = ?");
-        $stmt->bind_param("si", $novo_estado, $id);
-        $stmt->execute();
-        $stmt->close();
+        $estadoAtual = $resAtual['estado'] ?? '';
+        $nomeCliente = $resAtual['nome'] ?? '';
+        $emailCliente = $resAtual['email'] ?? '';
+
+        if (
+            $estadoAtual === $novo_estado ||
+            (isset($transicoes_validas[$estadoAtual]) && in_array($novo_estado, $transicoes_validas[$estadoAtual], true))
+        ) {
+            $stmt = $conn->prepare("UPDATE encomendas SET estado = ? WHERE id = ?");
+            $stmt->bind_param("si", $novo_estado, $id);
+            $stmt->execute();
+            $stmt->close();
+
+            if ($estadoAtual !== $novo_estado && !empty($emailCliente)) {
+                enviarEmailAtualizacaoEstadoEncomenda($emailCliente, $nomeCliente, $id, $novo_estado);
+            }
+
+            header("Location: admin.php?estado_atualizado=1");
+            exit;
+        } else {
+            header("Location: admin.php?estado_invalido=1");
+            exit;
+        }
     }
 
-    header("Location: admin.php?estado_atualizado=1");
+    header("Location: admin.php?estado_invalido=1");
     exit;
 }
 
@@ -151,7 +204,7 @@ if (isset($_GET['export'])) {
                 $produtos_list,
                 $row['total'],
                 $row['data_hora'],
-                $row['estado']
+                $estado_labels[$row['estado']] ?? $row['estado']
             ]);
         }
     }
@@ -273,12 +326,20 @@ $encomendas = $conn->query("
             transform: scale(1.05);
         }
 
-        .mensagem-sucesso {
-            background: #1f7a1f;
+        .mensagem-sucesso,
+        .mensagem-erro {
             color: white;
             padding: 12px 15px;
             border-radius: 8px;
             margin-bottom: 20px;
+        }
+
+        .mensagem-sucesso {
+            background: #1f7a1f;
+        }
+
+        .mensagem-erro {
+            background: #a82828;
         }
 
         .acoes-admin {
@@ -290,7 +351,7 @@ $encomendas = $conn->query("
 
         select {
             padding: 6px 8px;
-            border-radius: 4px;
+            border-radius: 999px;
             border: none;
             font-weight: bold;
         }
@@ -309,24 +370,40 @@ $encomendas = $conn->query("
             background: #ffcc00;
             color: black;
             font-weight: bold;
-            border-radius: 4px;
-            padding: 3px 8px;
+            border-radius: 999px;
+            padding: 6px 12px;
         }
 
         .estado-processada {
             background: #3399ff;
             color: white;
             font-weight: bold;
-            border-radius: 4px;
-            padding: 3px 8px;
+            border-radius: 999px;
+            padding: 6px 12px;
         }
 
-        .estado-entregue {
+        .estado-pronta {
+            background: #8a5cff;
+            color: white;
+            font-weight: bold;
+            border-radius: 999px;
+            padding: 6px 12px;
+        }
+
+        .estado-concluida {
             background: #33cc66;
             color: white;
             font-weight: bold;
-            border-radius: 4px;
-            padding: 3px 8px;
+            border-radius: 999px;
+            padding: 6px 12px;
+        }
+
+        .estado-cancelada {
+            background: #d64545;
+            color: white;
+            font-weight: bold;
+            border-radius: 999px;
+            padding: 6px 12px;
         }
 
         ul {
@@ -414,12 +491,16 @@ $encomendas = $conn->query("
         <div class="mensagem-sucesso">Encomenda apagada com sucesso.</div>
     <?php endif; ?>
 
-    <?php if (isset($_GET['entregues_apagadas'])): ?>
-        <div class="mensagem-sucesso">Encomendas entregues removidas com sucesso.</div>
+    <?php if (isset($_GET['concluidas_apagadas'])): ?>
+        <div class="mensagem-sucesso">Encomendas concluídas removidas com sucesso.</div>
     <?php endif; ?>
 
     <?php if (isset($_GET['estado_atualizado'])): ?>
         <div class="mensagem-sucesso">Estado da encomenda atualizado com sucesso.</div>
+    <?php endif; ?>
+
+    <?php if (isset($_GET['estado_invalido'])): ?>
+        <div class="mensagem-erro">Transição de estado inválida.</div>
     <?php endif; ?>
 
     <h2>Marcações <a href="?export=marcacoes" class="export-btn">Exportar CSV</a></h2>
@@ -471,9 +552,9 @@ $encomendas = $conn->query("
     <div class="top-actions">
         <a href="?export=encomendas" class="export-btn">Exportar CSV</a>
 
-        <form method="post" class="form-inline" onsubmit="return confirm('Tens a certeza que queres apagar todas as encomendas entregues?');">
-            <button type="submit" name="limpar_entregues" class="btn-danger">
-                 Limpar Encomendas Entregues
+        <form method="post" class="form-inline" onsubmit="return confirm('Tens a certeza que queres apagar todas as encomendas concluídas?');">
+            <button type="submit" name="limpar_concluidas" class="btn-danger">
+                 Limpar Encomendas Concluídas
             </button>
         </form>
     </div>
@@ -527,14 +608,12 @@ $encomendas = $conn->query("
                         <td data-label="Estado">
                             <form method="POST" style="margin:0;">
                                 <input type="hidden" name="encomenda_id" value="<?= (int) $e['id'] ?>">
-                                <select name="estado" class="<?= 'estado-' . strtolower($e['estado']) ?>">
-                                    <?php
-                                    $estados = ['Pendente', 'Processada', 'Entregue'];
-                                    foreach ($estados as $estado) {
-                                        $selected = ($e['estado'] === $estado) ? 'selected' : '';
-                                        echo "<option value=\"$estado\" $selected>$estado</option>";
-                                    }
-                                    ?>
+                                <select name="estado" class="<?= $estado_classes[$e['estado']] ?? 'estado-pendente' ?>">
+                                    <?php foreach ($estado_labels as $valor => $label): ?>
+                                        <option value="<?= $valor ?>" <?= $e['estado'] === $valor ? 'selected' : '' ?>>
+                                            <?= $label ?>
+                                        </option>
+                                    <?php endforeach; ?>
                                 </select>
                         </td>
                         <td data-label="Atualizar">

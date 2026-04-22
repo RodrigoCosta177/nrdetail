@@ -793,6 +793,8 @@ $marcacoes = $stmtMarc->get_result();
                 <h2><?= htmlspecialchars($user['nome']) ?></h2>
                 <p><?= htmlspecialchars($user['email']) ?></p>
 
+            
+
                 <form method="post" enctype="multipart/form-data" class="form-foto-perfil">
                     <input type="file" name="foto_perfil" id="foto_perfil" accept=".jpg,.jpeg,.png,.webp" required>
                     <div class="preview-foto" id="preview-foto">
