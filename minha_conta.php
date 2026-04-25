@@ -36,10 +36,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_perfil'])) {
     $tab_ativa = 'dados';
 
     $nome = trim($_POST['nome'] ?? '');
-    $nif = trim($_POST['nif'] ?? '');
+    $nif = preg_replace('/\D/', '', $_POST['nif'] ?? '');
     $email = trim($_POST['email'] ?? '');
+    $telefone_indicativo = trim($_POST['telefone_indicativo'] ?? '+351');
+    $telefone = preg_replace('/\D/', '', $_POST['telefone'] ?? '');
 
-    if (empty($nome) || empty($nif) || empty($email)) {
+    $limites_telefone = [
+        '+351' => 9,
+        '+34'  => 9,
+        '+33'  => 9,
+        '+41'  => 9,
+        '+352' => 9,
+        '+44'  => 10,
+        '+49'  => 11,
+        '+39'  => 10,
+        '+55'  => 11,
+        '+244' => 9
+    ];
+
+    if (empty($nome) || empty($nif) || empty($email) || empty($telefone)) {
         $erro = "Preenche todos os campos.";
     } elseif (!preg_match('/^[0-9]{9}$/', $nif)) {
         $erro = "O NIF deve ter exatamente 9 dígitos.";
@@ -47,18 +62,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_perfil'])) {
         $erro = "NIF inválido.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $erro = "Email inválido.";
+    } elseif (!isset($limites_telefone[$telefone_indicativo])) {
+        $erro = "Indicativo inválido.";
+    } elseif (strlen($telefone) !== $limites_telefone[$telefone_indicativo]) {
+        $erro = "Número inválido para o país selecionado. Deve ter " . $limites_telefone[$telefone_indicativo] . " dígitos.";
     } else {
-        $stmtCheck = $conn->prepare("SELECT id FROM users WHERE (email = ? OR nif = ?) AND id != ? LIMIT 1");
-        $stmtCheck->bind_param("ssi", $email, $nif, $user_id);
+        $stmtCheck = $conn->prepare("
+            SELECT id 
+            FROM users 
+            WHERE (email = ? OR nif = ? OR (telefone_indicativo = ? AND telefone = ?))
+            AND id != ?
+            LIMIT 1
+        ");
+        $stmtCheck->bind_param("ssssi", $email, $nif, $telefone_indicativo, $telefone, $user_id);
         $stmtCheck->execute();
         $existe = $stmtCheck->get_result()->fetch_assoc();
         $stmtCheck->close();
 
         if ($existe) {
-            $erro = "Já existe outro utilizador com esse email ou NIF.";
+            $erro = "Já existe outro utilizador com esse email, NIF ou telefone.";
         } else {
-            $stmtUpdate = $conn->prepare("UPDATE users SET nome = ?, nif = ?, email = ? WHERE id = ?");
-            $stmtUpdate->bind_param("sssi", $nome, $nif, $email, $user_id);
+            $stmtUpdate = $conn->prepare("
+                UPDATE users 
+                SET nome = ?, nif = ?, email = ?, telefone_indicativo = ?, telefone = ?
+                WHERE id = ?
+            ");
+            $stmtUpdate->bind_param("sssssi", $nome, $nif, $email, $telefone_indicativo, $telefone, $user_id);
 
             if ($stmtUpdate->execute()) {
                 $_SESSION['user']['nome'] = $nome;
@@ -289,11 +318,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_marcacao']))
 /* =========================
    BUSCAR DADOS UTILIZADOR
 ========================= */
-$stmtUser = $conn->prepare("SELECT id, nome, nif, email, tipo, foto_perfil FROM users WHERE id = ? LIMIT 1");
+$stmtUser = $conn->prepare("SELECT id, nome, nif, email, telefone_indicativo, telefone, tipo, foto_perfil FROM users WHERE id = ? LIMIT 1");
 $stmtUser->bind_param("i", $user_id);
 $stmtUser->execute();
 $user = $stmtUser->get_result()->fetch_assoc();
 $stmtUser->close();
+
+$form_nome = $user['nome'] ?? '';
+$form_nif = $user['nif'] ?? '';
+$form_email = $user['email'] ?? '';
+$form_telefone_indicativo = $user['telefone_indicativo'] ?? '+351';
+$form_telefone = $user['telefone'] ?? '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_perfil']) && !empty($erro)) {
+    $form_nome = trim($_POST['nome'] ?? '');
+    $form_nif = preg_replace('/\D/', '', $_POST['nif'] ?? '');
+    $form_email = trim($_POST['email'] ?? '');
+    $form_telefone_indicativo = trim($_POST['telefone_indicativo'] ?? '+351');
+    $form_telefone = preg_replace('/\D/', '', $_POST['telefone'] ?? '');
+}
 
 /* =========================
    ENCOMENDAS
@@ -560,6 +603,23 @@ $marcacoes = $stmtMarc->get_result();
             box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
         }
 
+                .perfil-field select {
+            width: 100%;
+            height: 48px;
+            padding: 0 14px;
+            border: 1px solid #333;
+            background: #121212;
+            color: white;
+            border-radius: 12px;
+            outline: none;
+            transition: 0.25s ease;
+        }
+
+        .perfil-field select:focus {
+            border-color: #ffcc00;
+            box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
+        }
+
         .perfil-actions {
             display: flex;
             gap: 12px;
@@ -801,7 +861,7 @@ $marcacoes = $stmtMarc->get_result();
                         <img id="preview-foto-img" src="" alt="Preview">
                     </div>
                     <button type="submit" name="upload_foto" class="perfil-link-btn">Atualizar foto</button>
-                </form>
+                </form> 
             </div>
 
             <div class="perfil-menu">
@@ -835,19 +895,40 @@ $marcacoes = $stmtMarc->get_result();
                         <div class="perfil-form-grid">
                             <div class="perfil-field full">
                                 <label for="nome">Nome</label>
-                                <input type="text" name="nome" id="nome" value="<?= htmlspecialchars($user['nome']) ?>" required>
+                                <input type="text" name="nome" value="<?= htmlspecialchars($form_nome) ?>">
                             </div>
 
                             <div class="perfil-field">
                                 <label for="nif">NIF</label>
-                                <input type="text" name="nif" id="nif" value="<?= htmlspecialchars($user['nif'] ?? '') ?>" maxlength="9" required>
+                                <input type="text" name="nif" id="nif" value="<?= htmlspecialchars($user['nif'] ?? '') ?>" maxlength="9" minlength="9" required>
                             </div>
 
                             <div class="perfil-field">
                                 <label for="email">Email</label>
-                                <input type="email" name="email" id="email" value="<?= htmlspecialchars($user['email']) ?>" required>
+                                <input type="email" name="email" value="<?= htmlspecialchars($form_email) ?>">
                             </div>
                         </div>
+
+                        <div class="perfil-field">
+                        <label for="telefone_indicativo">Indicativo</label>
+                        <select name="telefone_indicativo" id="telefone_indicativo" required>
+                            <option value="+351" data-max="9" <?= $form_telefone_indicativo === '+351' ? 'selected' : '' ?>>🇵🇹 +351 Portugal</option>
+                            <option value="+34" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+34' ? 'selected' : '' ?>>🇪🇸 +34 Espanha</option>
+                            <option value="+33" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+33' ? 'selected' : '' ?>>🇫🇷 +33 França</option>
+                            <option value="+41" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+41' ? 'selected' : '' ?>>🇨🇭 +41 Suíça</option>
+                            <option value="+352" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+352' ? 'selected' : '' ?>>🇱🇺 +352 Luxemburgo</option>
+                            <option value="+44" data-max="10" <?= ($user['telefone_indicativo'] ?? '') === '+44' ? 'selected' : '' ?>>🇬🇧 +44 Reino Unido</option>
+                            <option value="+49" data-max="11" <?= ($user['telefone_indicativo'] ?? '') === '+49' ? 'selected' : '' ?>>🇩🇪 +49 Alemanha</option>
+                            <option value="+39" data-max="10" <?= ($user['telefone_indicativo'] ?? '') === '+39' ? 'selected' : '' ?>>🇮🇹 +39 Itália</option>
+                            <option value="+55" data-max="11" <?= ($user['telefone_indicativo'] ?? '') === '+55' ? 'selected' : '' ?>>🇧🇷 +55 Brasil</option>
+                            <option value="+244" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+244' ? 'selected' : '' ?>>🇦🇴 +244 Angola</option>
+                        </select>
+                    </div>
+
+                    <div class="perfil-field">
+                        <label for="telefone">Telefone</label>
+                        <input type="text" name="telefone" value="<?= htmlspecialchars($form_telefone) ?>">
+                    </div>
 
                         <div class="perfil-actions">
                             <button type="submit" name="guardar_perfil" class="btn-perfil btn-salvar">Guardar Alterações</button>
@@ -1101,6 +1182,28 @@ if (fotoInput && previewBox && previewImg) {
         } else {
             previewBox.style.display = 'none';
         }
+    });
+}
+
+
+const telInput = document.getElementById('telefone');
+const selectIndicativo = document.getElementById('telefone_indicativo');
+
+function getTelefoneMaxLength() {
+    if (!selectIndicativo) return 15;
+    const selected = selectIndicativo.options[selectIndicativo.selectedIndex];
+    return parseInt(selected.dataset.max || '15');
+}
+
+if (telInput && selectIndicativo) {
+    selectIndicativo.addEventListener('change', function () {
+        const max = getTelefoneMaxLength();
+        telInput.value = telInput.value.replace(/\D/g, '').slice(0, max);
+    });
+
+    telInput.addEventListener('input', function () {
+        const max = getTelefoneMaxLength();
+        this.value = this.value.replace(/\D/g, '').slice(0, max);
     });
 }
 </script>

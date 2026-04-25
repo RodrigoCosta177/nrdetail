@@ -15,8 +15,21 @@ function validarNIF($nif) {
     $check = 11 - ($total % 11);
     if ($check >= 10) $check = 0;
 
-    return $check == $nif[8];
+    return (int)$check === (int)$nif[8];
 }
+
+$limites_telefone = [
+    '+351' => 9,
+    '+34'  => 9,
+    '+33'  => 9,
+    '+41'  => 9,
+    '+352' => 9,
+    '+44'  => 10,
+    '+49'  => 11,
+    '+39'  => 10,
+    '+55'  => 11,
+    '+244' => 9
+];
 
 if (isset($_POST['register'])) {
     $nome = trim($_POST['nome'] ?? '');
@@ -25,7 +38,10 @@ if (isset($_POST['register'])) {
     $password_raw = $_POST['password'] ?? '';
     $confirmar_password = $_POST['confirmar_password'] ?? '';
 
-    if (empty($nome) || empty($nif) || empty($email) || empty($password_raw) || empty($confirmar_password)) {
+    $telefone_indicativo = trim($_POST['telefone_indicativo'] ?? '+351');
+    $telefone = preg_replace('/\D/', '', $_POST['telefone'] ?? '');
+
+    if (empty($nome) || empty($nif) || empty($email) || empty($password_raw) || empty($confirmar_password) || empty($telefone)) {
         $error = "Preenche todos os campos.";
     }
     elseif (!preg_match('/^[0-9]{9}$/', $nif)) {
@@ -37,6 +53,12 @@ if (isset($_POST['register'])) {
     elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Email inválido.";
     }
+    elseif (!isset($limites_telefone[$telefone_indicativo])) {
+        $error = "Indicativo inválido.";
+    }
+    elseif (strlen($telefone) !== $limites_telefone[$telefone_indicativo]) {
+        $error = "Número inválido para o país selecionado. O número deve ter " . $limites_telefone[$telefone_indicativo] . " dígitos.";
+    }
     elseif (strlen($password_raw) < 6) {
         $error = "A password deve ter pelo menos 6 caracteres.";
     }
@@ -44,29 +66,46 @@ if (isset($_POST['register'])) {
         $error = "As passwords não coincidem.";
     }
     else {
-        // Verifica se email OU nif já existem
-        $stmt = $conn->prepare("SELECT id FROM users WHERE email=? OR nif=?");
-        $stmt->bind_param("ss", $email, $nif);
+        $stmt = $conn->prepare("
+            SELECT id 
+            FROM users 
+            WHERE email = ? 
+               OR nif = ? 
+               OR (telefone_indicativo = ? AND telefone = ?)
+            LIMIT 1
+        ");
+        $stmt->bind_param("ssss", $email, $nif, $telefone_indicativo, $telefone);
         $stmt->execute();
         $res = $stmt->get_result();
 
         if ($res->num_rows > 0) {
-            $error = "Email ou NIF já registado!";
+            $error = "Email, NIF ou telefone já registado!";
         } else {
             $password = password_hash($password_raw, PASSWORD_DEFAULT);
 
-            $stmt = $conn->prepare("INSERT INTO users(nome,nif,email,password) VALUES(?,?,?,?)");
-            $stmt->bind_param("ssss", $nome, $nif, $email, $password);
-            $stmt->execute();
-            $stmt->close();
+            $stmtInsert = $conn->prepare("
+                INSERT INTO users (nome, nif, email, telefone_indicativo, telefone, password) 
+                VALUES (?, ?, ?, ?, ?, ?)
+            ");
+            $stmtInsert->bind_param("ssssss", $nome, $nif, $email, $telefone_indicativo, $telefone, $password);
 
-            header("Location: login.php");
-            exit;
+            if ($stmtInsert->execute()) {
+                $stmtInsert->close();
+                $stmt->close();
+
+                header("Location: login.php");
+                exit;
+            } else {
+                $error = "Erro ao criar conta. Tenta novamente.";
+                $stmtInsert->close();
+            }
         }
 
         $stmt->close();
     }
+    
 }
+?>
 ?>
 
 <!DOCTYPE html>
@@ -354,6 +393,35 @@ if (isset($_POST['register'])) {
                 height: 50px;
             }
         }
+
+        .telefone-group {
+    display: flex;
+    gap: 10px;
+}
+
+.telefone-group select {
+    width: 40%;
+    height: 48px;
+    border-radius: 12px;
+    border: 1px solid #d1d5db;
+    background: #eef2f7;
+    padding: 0 10px;
+}
+
+.telefone-group input {
+    width: 60%;
+}
+
+@media (max-width: 640px) {
+    .telefone-group {
+        flex-direction: column;
+    }
+
+    .telefone-group select,
+    .telefone-group input {
+        width: 100%;
+    }
+}
     </style>
 </head>
 <body class="login-page">
@@ -394,6 +462,26 @@ if (isset($_POST['register'])) {
                                 <label for="nif">NIF</label>
                                 <input type="text" name="nif" id="nif" required maxlength="9" pattern="[0-9]{9}" placeholder="123456789">
                             </div>
+
+                                                    <div class="input-group full">
+                            <label>Telefone</label>
+                            <div class="telefone-group">
+                               <select name="telefone_indicativo" id="telefone_indicativo" required>
+                                <option value="+351" data-max="9">🇵🇹 +351</option>
+                                <option value="+34" data-max="9">🇪🇸 +34</option>
+                                <option value="+33" data-max="9">🇫🇷 +33</option>
+                                <option value="+41" data-max="9">🇨🇭 +41</option>
+                                <option value="+352" data-max="9">🇱🇺 +352</option>
+                                <option value="+44" data-max="10">🇬🇧 +44</option>
+                                <option value="+49" data-max="11">🇩🇪 +49</option>
+                                <option value="+39" data-max="10">🇮🇹 +39</option>
+                                <option value="+55" data-max="11">🇧🇷 +55</option>
+                                <option value="+244" data-max="9">🇦🇴 +244</option>
+                            </select>
+
+                                <input type="text" name="telefone" id="telefone" required placeholder="912345678">
+                            </div>
+                        </div>
 
                             <div class="input-group">
                                 <label for="email">Email</label>
@@ -439,6 +527,39 @@ if (isset($_POST['register'])) {
 document.getElementById('nif').addEventListener('input', function(){
     this.value = this.value.replace(/\D/g, '').slice(0,9);
 });
+
+
+document.getElementById('telefone').addEventListener('input', function(){
+    this.value = this.value.replace(/\D/g, '').slice(0, 15);
+});
+
+
+const telInput = document.getElementById('telefone');
+const selectIndicativo = document.getElementById('telefone_indicativo');
+
+function getMaxLength() {
+    return parseInt(selectIndicativo.options[selectIndicativo.selectedIndex].dataset.max);
+}
+
+// quando muda o país
+selectIndicativo.addEventListener('change', () => {
+    const max = getMaxLength();
+    telInput.value = telInput.value.slice(0, max);
+});
+
+// quando escreve
+telInput.addEventListener('input', function () {
+    let max = getMaxLength();
+
+    // remove tudo que não é número
+    this.value = this.value.replace(/\D/g, '');
+
+    // limita ao máximo do país
+    if (this.value.length > max) {
+        this.value = this.value.slice(0, max);
+    }
+});
+
 </script>
 
 </body>

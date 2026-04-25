@@ -217,7 +217,15 @@ if (isset($_GET['export'])) {
    LISTAGENS
 ========================= */
 $marcacoes = $conn->query("
-    SELECT m.id, u.nome AS user_nome, u.email AS user_email, m.data_marcacao, m.hora, m.servico
+    SELECT 
+        m.id,
+        u.nome AS user_nome,
+        u.email AS user_email,
+        u.telefone_indicativo,
+        u.telefone,
+        m.data_marcacao,
+        m.hora,
+        m.servico
     FROM marcacoes m
     JOIN users u ON m.user_id = u.id
     ORDER BY m.data_marcacao ASC, m.hora ASC
@@ -519,6 +527,23 @@ $encomendas = $conn->query("
         <tbody>
             <?php if ($marcacoes && $marcacoes->num_rows > 0): ?>
                 <?php while ($m = $marcacoes->fetch_assoc()): ?>
+                    <?php
+                    $indicativoWpp = preg_replace('/\D/', '', $m['telefone_indicativo'] ?? '');
+                    $telefoneWpp = preg_replace('/\D/', '', $m['telefone'] ?? '');
+                    $numeroWpp = $indicativoWpp . $telefoneWpp;
+
+                    $mensagemWpp = "Olá " . $m['user_nome'] . ", a NR Detail informa que a tua marcação foi desmarcada.\n\n";
+                    $mensagemWpp .= "Serviço: " . $m['servico'] . "\n";
+                    $mensagemWpp .= "Data: " . $m['data_marcacao'] . "\n";
+                    $mensagemWpp .= "Hora: " . $m['hora'] . "\n\n";
+                    $mensagemWpp .= "Pedimos desculpa pelo incómodo. Entra em contacto connosco para reagendarmos uma nova data.\n\n";
+                    $mensagemWpp .= "Obrigado,\nNR Detail";
+
+                    $linkWpp = !empty($numeroWpp)
+                        ? "https://wa.me/" . $numeroWpp . "?text=" . urlencode($mensagemWpp)
+                        : "";
+                    ?>
+
                     <tr>
                         <td data-label="ID"><?= (int) $m['id'] ?></td>
                         <td data-label="Nome"><?= htmlspecialchars($m['user_nome']) ?></td>
@@ -534,8 +559,8 @@ $encomendas = $conn->query("
 
                                 <a href="admin.php?apagar_marcacao=<?= (int) $m['id'] ?>"
                                    class="btn-danger"
-                                   onclick="return confirm('Tens a certeza que queres apagar esta marcação?');">
-                                    Apagar
+                                   onclick="return desmarcarMarcacao(this.href, '<?= htmlspecialchars($linkWpp, ENT_QUOTES) ?>');">
+                                    Desmarcar
                                 </a>
                             </div>
                         </td>
@@ -651,6 +676,21 @@ $encomendas = $conn->query("
     </table>
 
 </div>
+
+<script>
+function desmarcarMarcacao(urlApagar, urlWhatsapp) {
+    if (!confirm('Tens a certeza que queres desmarcar esta marcação? Vai abrir o WhatsApp para avisar o cliente.')) {
+        return false;
+    }
+
+    if (urlWhatsapp) {
+        window.open(urlWhatsapp, '_blank');
+    }
+
+    window.location.href = urlApagar;
+    return false;
+}
+</script>
 
 </body>
 </html>

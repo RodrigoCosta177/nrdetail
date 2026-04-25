@@ -422,10 +422,10 @@ $resDisponibilidade = $conn->query("
                                     </form>
                                 </td>
                                 <td>
-                                    <a href="admin_disponibilidade.php?apagar=<?= (int)$disp['id'] ?>"
-                                       class="btn-apagar"
-                                       onclick="return confirm('Tens a certeza que queres apagar esta disponibilidade?');">
-                                        Apagar
+                                    <a href="admin.php?apagar_marcacao=<?= (int)$m['id'] ?>"
+                                    class="btn-apagar"
+                                    onclick="if(confirm('Tens a certeza que queres desmarcar esta marcação? Vai abrir o WhatsApp para avisar o cliente.')) { window.open(this.href, '_blank'); return false; } return false;">
+                                        Desmarcar
                                     </a>
                                 </td>
                             </tr>
