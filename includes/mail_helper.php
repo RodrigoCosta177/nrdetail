@@ -5,6 +5,9 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
+/* =========================
+   CONFIGURAR MAIL
+========================= */
 function configurarMailer()
 {
     $mail = new PHPMailer(true);
@@ -13,7 +16,7 @@ function configurarMailer()
     $mail->Host = 'smtp.gmail.com';
     $mail->SMTPAuth = true;
     $mail->Username = 'papnrdetail@gmail.com';
-    $mail->Password = 'jvkwobxogswvkivf';
+    $mail->Password = 'jvkwobxogswvkivf'; // app password
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
     $mail->CharSet = 'UTF-8';
@@ -23,6 +26,66 @@ function configurarMailer()
     return $mail;
 }
 
+/* =========================
+   EMAIL BOAS VINDAS
+========================= */
+function enviarEmailBoasVindas($emailCliente, $nomeCliente)
+{
+    try {
+        $mail = configurarMailer();
+
+        $mail->addAddress($emailCliente, $nomeCliente);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Bem-vindo à NR DETAIL';
+
+        $mail->Body = '
+            <div style="font-family: Arial, sans-serif; background:#111; padding:30px; color:#fff;">
+                <div style="max-width:600px; margin:auto; background:#1c1c1c; padding:28px; border-radius:14px; border:1px solid #333;">
+                    
+                    <h2 style="color:#ffcc00; margin-top:0;">
+                        Bem-vindo à NR DETAIL, ' . htmlspecialchars($nomeCliente, ENT_QUOTES, 'UTF-8') . '!
+                    </h2>
+
+                    <p>A tua conta foi criada com sucesso.</p>
+
+                    <p>
+                        Já podes:
+                        <br>✔ Fazer marcações online
+                        <br>✔ Acompanhar encomendas
+                        <br>✔ Comprar produtos na loja
+                    </p>
+
+                    <p style="margin-top:25px;">
+                        Obrigado por confiares na <strong>NR DETAIL</strong>.
+                    </p>
+
+                    <br>
+
+                    <p style="color:#aaa;">
+                        Cumprimentos,<br>
+                        <strong style="color:#ffcc00;">NR DETAIL Car & Care</strong>
+                    </p>
+
+                </div>
+            </div>
+        ';
+
+        $mail->AltBody =
+            'Bem-vindo à NR DETAIL, ' . $nomeCliente .
+            '! A tua conta foi criada com sucesso. Já podes fazer marcações, encomendas e usar o site.';
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        return 'ERRO MAIL BOAS VINDAS: ' . $mail->ErrorInfo;
+    }
+}
+
+/* =========================
+   EMAIL ENCOMENDA
+========================= */
 function enviarEmailEncomenda($emailCliente, $nomeCliente, $pdfPath, $encomendaId, $total)
 {
     try {
@@ -36,6 +99,7 @@ function enviarEmailEncomenda($emailCliente, $nomeCliente, $pdfPath, $encomendaI
 
         $mail->isHTML(true);
         $mail->Subject = 'Encomenda #' . $encomendaId . ' - NR DETAIL';
+
         $mail->Body = '
             <h2>Obrigado pela tua compra, ' . htmlspecialchars($nomeCliente) . '!</h2>
             <p>A tua encomenda foi registada com sucesso.</p>
@@ -47,10 +111,9 @@ function enviarEmailEncomenda($emailCliente, $nomeCliente, $pdfPath, $encomendaI
         ';
 
         $mail->AltBody =
-            'Obrigado pela tua compra, ' . $nomeCliente .
-            '! A tua encomenda #' . (int)$encomendaId .
-            ' foi registada com sucesso. Total: ' .
-            number_format((float)$total, 2, ',', '.') . ' EUR.';
+            'Encomenda #' . (int)$encomendaId .
+            ' registada. Total: ' .
+            number_format((float)$total, 2, ',', '.') . '€';
 
         $mail->send();
         return true;
@@ -60,6 +123,9 @@ function enviarEmailEncomenda($emailCliente, $nomeCliente, $pdfPath, $encomendaI
     }
 }
 
+/* =========================
+   RECUPERAR PASSWORD
+========================= */
 function enviarEmailRecuperacaoPassword($emailCliente, $nomeCliente, $linkReset)
 {
     try {
@@ -69,49 +135,50 @@ function enviarEmailRecuperacaoPassword($emailCliente, $nomeCliente, $linkReset)
 
         $mail->isHTML(true);
         $mail->Subject = 'Recuperação de Password - NR DETAIL';
+
         $mail->Body = '
             <h2>Recuperação de Password</h2>
             <p>Olá, ' . htmlspecialchars($nomeCliente) . '.</p>
-            <p>Recebemos um pedido para redefinir a tua password.</p>
-            <p>Clica no botão abaixo para continuar:</p>
-            <p>
-                <a href="' . htmlspecialchars($linkReset) . '" style="
-                    display:inline-block;
-                    background:#ffcc00;
-                    color:#000;
-                    text-decoration:none;
-                    padding:12px 20px;
-                    border-radius:8px;
-                    font-weight:bold;
-                ">
-                    Redefinir Password
-                </a>
-            </p>
+            <p>Clica no botão abaixo para redefinir a tua password:</p>
+
+            <a href="' . htmlspecialchars($linkReset) . '" style="
+                display:inline-block;
+                background:#ffcc00;
+                color:#000;
+                padding:12px 20px;
+                border-radius:8px;
+                text-decoration:none;
+                font-weight:bold;
+            ">
+                Redefinir Password
+            </a>
+
             <p>Este link é válido por 1 hora.</p>
-            <p>Se não foste tu, podes ignorar este email.</p>
+
             <br>
-            <p>Cumprimentos,<br><strong>NR DETAIL</strong></p>
+            <p>NR DETAIL</p>
         ';
 
         $mail->AltBody =
-            'Olá, ' . $nomeCliente .
-            '. Usa este link para redefinir a tua password: ' . $linkReset .
-            '. Este link é válido por 1 hora.';
+            'Redefine a tua password aqui: ' . $linkReset;
 
         $mail->send();
         return true;
 
     } catch (Exception $e) {
-        return 'ERRO MAIL: ' . $mail->ErrorInfo;
+        return 'ERRO MAIL RESET: ' . $mail->ErrorInfo;
     }
 }
 
+/* =========================
+   ESTADOS ENCOMENDA
+========================= */
 function getLabelEstadoEncomenda($estado)
 {
     $labels = [
         'pendente' => 'Pendente',
         'processada' => 'Em processamento',
-        'pronta_levantamento' => 'Pronta para levantamento em loja',
+        'pronta_levantamento' => 'Pronta para levantamento',
         'concluida' => 'Concluída',
         'cancelada' => 'Cancelada'
     ];
@@ -123,20 +190,23 @@ function getMensagemEstadoEncomenda($estado)
 {
     switch ($estado) {
         case 'pendente':
-            return 'A tua encomenda foi registada e está pendente de processamento.';
+            return 'A tua encomenda está pendente.';
         case 'processada':
             return 'A tua encomenda está a ser preparada.';
         case 'pronta_levantamento':
-            return 'A tua encomenda está pronta para levantamento em loja.';
+            return 'Já podes levantar a tua encomenda.';
         case 'concluida':
-            return 'A tua encomenda foi concluída com sucesso.';
+            return 'Encomenda concluída com sucesso.';
         case 'cancelada':
-            return 'A tua encomenda foi cancelada.';
+            return 'A encomenda foi cancelada.';
         default:
-            return 'O estado da tua encomenda foi atualizado.';
+            return 'Estado atualizado.';
     }
 }
 
+/* =========================
+   EMAIL ATUALIZAÇÃO ESTADO
+========================= */
 function enviarEmailAtualizacaoEstadoEncomenda($emailCliente, $nomeCliente, $encomendaId, $novoEstado)
 {
     try {
@@ -146,23 +216,22 @@ function enviarEmailAtualizacaoEstadoEncomenda($emailCliente, $nomeCliente, $enc
         $mensagemEstado = getMensagemEstadoEncomenda($novoEstado);
 
         $mail->addAddress($emailCliente, $nomeCliente);
+
         $mail->isHTML(true);
-        $mail->Subject = 'Atualização da encomenda #' . (int)$encomendaId . ' - NR DETAIL';
+        $mail->Subject = 'Atualização da encomenda #' . (int)$encomendaId;
 
         $mail->Body = '
-            <h2>Olá, ' . htmlspecialchars($nomeCliente, ENT_QUOTES, 'UTF-8') . '!</h2>
-            <p>O estado da tua encomenda foi atualizado.</p>
-            <p><strong>Encomenda:</strong> #' . (int)$encomendaId . '</p>
-            <p><strong>Novo estado:</strong> ' . htmlspecialchars($labelEstado, ENT_QUOTES, 'UTF-8') . '</p>
-            <p>' . htmlspecialchars($mensagemEstado, ENT_QUOTES, 'UTF-8') . '</p>
+            <h2>Olá, ' . htmlspecialchars($nomeCliente) . '!</h2>
+            <p>Estado atualizado:</p>
+            <p><strong>' . htmlspecialchars($labelEstado) . '</strong></p>
+            <p>' . htmlspecialchars($mensagemEstado) . '</p>
             <br>
-            <p>Cumprimentos,<br><strong>NR DETAIL</strong></p>
+            <p>NR DETAIL</p>
         ';
 
         $mail->AltBody =
-            'Olá, ' . $nomeCliente .
-            '. O estado da tua encomenda #' . (int)$encomendaId .
-            ' foi atualizado para: ' . $labelEstado . '. ' . $mensagemEstado;
+            'Estado da encomenda #' . (int)$encomendaId .
+            ': ' . $labelEstado;
 
         $mail->send();
         return true;

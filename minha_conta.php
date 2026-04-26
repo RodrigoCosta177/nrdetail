@@ -54,27 +54,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_perfil'])) {
         '+244' => 9
     ];
 
-    if (empty($nome) || empty($nif) || empty($email) || empty($telefone)) {
-        $erro = "Preenche todos os campos.";
-    } elseif (!preg_match('/^[0-9]{9}$/', $nif)) {
-        $erro = "O NIF deve ter exatamente 9 dígitos.";
-    } elseif (!validarNIFConta($nif)) {
-        $erro = "NIF inválido.";
+    // 🔥 VALIDAÇÃO (AGORA COM CAMPOS OPCIONAIS)
+    if (empty($nome) || empty($email)) {
+        $erro = "Preenche os campos obrigatórios.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $erro = "Email inválido.";
-    } elseif (!isset($limites_telefone[$telefone_indicativo])) {
+    } elseif (!empty($nif) && !preg_match('/^[0-9]{9}$/', $nif)) {
+        $erro = "O NIF deve ter exatamente 9 dígitos.";
+    } elseif (!empty($nif) && !validarNIFConta($nif)) {
+        $erro = "NIF inválido.";
+    } elseif (!empty($telefone) && !isset($limites_telefone[$telefone_indicativo])) {
         $erro = "Indicativo inválido.";
-    } elseif (strlen($telefone) !== $limites_telefone[$telefone_indicativo]) {
-        $erro = "Número inválido para o país selecionado. Deve ter " . $limites_telefone[$telefone_indicativo] . " dígitos.";
+    } elseif (!empty($telefone) && strlen($telefone) !== $limites_telefone[$telefone_indicativo]) {
+        $erro = "Número inválido para o país selecionado.";
     } else {
+
+        // 🔥 CHECK DUPLICADOS (AGORA CORRIGIDO)
         $stmtCheck = $conn->prepare("
             SELECT id 
             FROM users 
-            WHERE (email = ? OR nif = ? OR (telefone_indicativo = ? AND telefone = ?))
+            WHERE (
+                email = ?
+                OR (? != '' AND nif = ?)
+                OR (? != '' AND telefone_indicativo = ? AND telefone = ?)
+            )
             AND id != ?
             LIMIT 1
         ");
-        $stmtCheck->bind_param("ssssi", $email, $nif, $telefone_indicativo, $telefone, $user_id);
+
+        $stmtCheck->bind_param(
+            "ssssssi",
+            $email,
+            $nif,
+            $nif,
+            $telefone,
+            $telefone_indicativo,
+            $telefone,
+            $user_id
+        );
+
         $stmtCheck->execute();
         $existe = $stmtCheck->get_result()->fetch_assoc();
         $stmtCheck->close();
@@ -82,11 +100,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar_perfil'])) {
         if ($existe) {
             $erro = "Já existe outro utilizador com esse email, NIF ou telefone.";
         } else {
+
             $stmtUpdate = $conn->prepare("
                 UPDATE users 
                 SET nome = ?, nif = ?, email = ?, telefone_indicativo = ?, telefone = ?
                 WHERE id = ?
             ");
+
             $stmtUpdate->bind_param("sssssi", $nome, $nif, $email, $telefone_indicativo, $telefone, $user_id);
 
             if ($stmtUpdate->execute()) {
@@ -165,7 +185,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_foto'])) {
                 mkdir($pasta, 0777, true);
             }
 
-            // buscar foto antiga
             $stmtFotoAtual = $conn->prepare("SELECT foto_perfil FROM users WHERE id = ? LIMIT 1");
             $stmtFotoAtual->bind_param("i", $user_id);
             $stmtFotoAtual->execute();
@@ -186,6 +205,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_foto'])) {
                             @unlink($caminhoAntigo);
                         }
                     }
+
                     $mensagem = "Foto de perfil atualizada com sucesso.";
                 } else {
                     $erro = "Erro ao guardar a foto de perfil.";
@@ -297,6 +317,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_marcacao']))
             $erro = "Marcação inválida.";
         } else {
             $dataHoraMarc = strtotime($marc['data_marcacao'] . ' ' . $marc['hora']);
+
             if ($dataHoraMarc < time()) {
                 $erro = "Não podes cancelar uma marcação que já passou.";
             } else {
@@ -318,7 +339,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_marcacao']))
 /* =========================
    BUSCAR DADOS UTILIZADOR
 ========================= */
-$stmtUser = $conn->prepare("SELECT id, nome, nif, email, telefone_indicativo, telefone, tipo, foto_perfil FROM users WHERE id = ? LIMIT 1");
+$stmtUser = $conn->prepare("
+    SELECT id, nome, nif, email, telefone_indicativo, telefone, tipo, foto_perfil
+    FROM users
+    WHERE id = ?
+    LIMIT 1
+");
 $stmtUser->bind_param("i", $user_id);
 $stmtUser->execute();
 $user = $stmtUser->get_result()->fetch_assoc();
@@ -364,13 +390,16 @@ $stmtMarc->bind_param("i", $user_id);
 $stmtMarc->execute();
 $marcacoes = $stmtMarc->get_result();
 ?>
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Perfil - NR Detail</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <link rel="stylesheet" href="css/style.css">
+
     <style>
         .perfil-page {
             min-height: 100vh;
@@ -401,10 +430,17 @@ $marcacoes = $stmtMarc->get_result();
             margin-bottom: 30px;
         }
 
-        .perfil-avatar {
+        .perfil-avatar,
+        .perfil-avatar-img {
             width: 98px;
             height: 98px;
             border-radius: 50%;
+            margin: 0 auto 14px;
+            border: 3px solid #ffcc00;
+            box-shadow: 0 0 18px rgba(255,204,0,0.25);
+        }
+
+        .perfil-avatar {
             background: #ffcc00;
             color: black;
             display: flex;
@@ -412,19 +448,11 @@ $marcacoes = $stmtMarc->get_result();
             justify-content: center;
             font-size: 34px;
             font-weight: bold;
-            margin: 0 auto 14px;
-            box-shadow: 0 0 18px rgba(255,204,0,0.25);
         }
 
         .perfil-avatar-img {
-            width: 98px;
-            height: 98px;
-            border-radius: 50%;
             object-fit: cover;
             display: block;
-            margin: 0 auto 14px;
-            border: 3px solid #ffcc00;
-            box-shadow: 0 0 18px rgba(255,204,0,0.25);
         }
 
         .perfil-user h2 {
@@ -447,6 +475,10 @@ $marcacoes = $stmtMarc->get_result();
         }
 
         .form-foto-perfil input[type="file"] {
+            background: #111;
+            border: 1px solid #333;
+            padding: 8px;
+            border-radius: 8px;
             color: #cfcfcf;
             font-size: 12px;
             width: 100%;
@@ -463,6 +495,7 @@ $marcacoes = $stmtMarc->get_result();
             object-fit: cover;
             border-radius: 50%;
             border: 2px solid #ffcc00;
+            margin: 0 auto;
         }
 
         .perfil-menu {
@@ -471,7 +504,8 @@ $marcacoes = $stmtMarc->get_result();
             gap: 10px;
         }
 
-        .perfil-tab-btn {
+        .perfil-tab-btn,
+        .logout-link {
             border: 1px solid #2d2d2d;
             background: #1d1d1d;
             color: #d5d5d5;
@@ -481,6 +515,7 @@ $marcacoes = $stmtMarc->get_result();
             font-weight: 600;
             text-align: left;
             cursor: pointer;
+            text-decoration: none;
         }
 
         .perfil-tab-btn:hover,
@@ -490,23 +525,9 @@ $marcacoes = $stmtMarc->get_result();
             border-color: #ffcc00;
         }
 
-        .perfil-sidebar a.logout-link {
-            text-decoration: none;
-            display: block;
-            margin-top: 8px;
-            color: #d5d5d5;
-            background: #1d1d1d;
-            border: 1px solid #2d2d2d;
-            padding: 13px 14px;
-            border-radius: 10px;
-            transition: 0.25s ease;
-            font-weight: 600;
-        }
-
-        .perfil-sidebar a.logout-link:hover {
-            background: #11293b;
+        .logout-link:hover {
+            background: #292929;
             color: white;
-            border-color: #11293b;
         }
 
         .perfil-main {
@@ -586,7 +607,8 @@ $marcacoes = $stmtMarc->get_result();
             font-weight: 600;
         }
 
-        .perfil-field input {
+        .perfil-field input,
+        .perfil-field select {
             width: 100%;
             height: 48px;
             padding: 0 14px;
@@ -598,23 +620,7 @@ $marcacoes = $stmtMarc->get_result();
             transition: 0.25s ease;
         }
 
-        .perfil-field input:focus {
-            border-color: #ffcc00;
-            box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
-        }
-
-                .perfil-field select {
-            width: 100%;
-            height: 48px;
-            padding: 0 14px;
-            border: 1px solid #333;
-            background: #121212;
-            color: white;
-            border-radius: 12px;
-            outline: none;
-            transition: 0.25s ease;
-        }
-
+        .perfil-field input:focus,
         .perfil-field select:focus {
             border-color: #ffcc00;
             box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
@@ -625,9 +631,12 @@ $marcacoes = $stmtMarc->get_result();
             gap: 12px;
             margin-top: 20px;
             flex-wrap: wrap;
+            align-items: center;
         }
 
-        .btn-perfil {
+        .btn-perfil,
+        .perfil-link-btn,
+        .btn-apagar-conta {
             border: none;
             padding: 12px 20px;
             border-radius: 10px;
@@ -638,13 +647,25 @@ $marcacoes = $stmtMarc->get_result();
             display: inline-block;
         }
 
-        .btn-salvar {
+        .btn-salvar,
+        .perfil-link-btn {
             background: #ffcc00;
             color: black;
         }
 
-        .btn-salvar:hover {
+        .btn-salvar:hover,
+        .perfil-link-btn:hover {
             background: #e6b800;
+        }
+
+        .btn-apagar-conta {
+            background: #d64545;
+            color: #fff;
+        }
+
+        .btn-apagar-conta:hover {
+            background: #b93131;
+            transform: translateY(-2px);
         }
 
         .perfil-table-wrap {
@@ -698,8 +719,14 @@ $marcacoes = $stmtMarc->get_result();
             color: white;
         }
 
-        .estado-entregue {
+        .estado-entregue,
+        .estado-concluida {
             background: #33cc66;
+            color: white;
+        }
+
+        .estado-cancelada {
+            background: #d64545;
             color: white;
         }
 
@@ -713,28 +740,9 @@ $marcacoes = $stmtMarc->get_result();
             text-decoration: underline;
         }
 
-        .perfil-link-btn {
-            background: #ffcc00;
-            color: black;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.25s ease;
-        }
-
-        .perfil-link-btn:hover {
-            background: #e6b800;
-        }
-
         .linha-detalhes td {
             background: #151515;
             white-space: normal;
-        }
-
-        .detalhes-encomenda-box {
-            padding: 8px 2px;
         }
 
         .detalhes-produtos {
@@ -833,6 +841,7 @@ $marcacoes = $stmtMarc->get_result();
         }
     </style>
 </head>
+
 <body>
 
 <?php include('includes/header.php'); ?>
@@ -853,15 +862,17 @@ $marcacoes = $stmtMarc->get_result();
                 <h2><?= htmlspecialchars($user['nome']) ?></h2>
                 <p><?= htmlspecialchars($user['email']) ?></p>
 
-            
-
                 <form method="post" enctype="multipart/form-data" class="form-foto-perfil">
                     <input type="file" name="foto_perfil" id="foto_perfil" accept=".jpg,.jpeg,.png,.webp" required>
+
                     <div class="preview-foto" id="preview-foto">
                         <img id="preview-foto-img" src="" alt="Preview">
                     </div>
-                    <button type="submit" name="upload_foto" class="perfil-link-btn">Atualizar foto</button>
-                </form> 
+
+                    <button type="submit" name="upload_foto" class="perfil-link-btn">
+                        Atualizar foto
+                    </button>
+                </form>
             </div>
 
             <div class="perfil-menu">
@@ -895,51 +906,53 @@ $marcacoes = $stmtMarc->get_result();
                         <div class="perfil-form-grid">
                             <div class="perfil-field full">
                                 <label for="nome">Nome</label>
-                                <input type="text" name="nome" value="<?= htmlspecialchars($form_nome) ?>">
+                                <input type="text" name="nome" id="nome" value="<?= htmlspecialchars($form_nome) ?>" required>
                             </div>
 
                             <div class="perfil-field">
                                 <label for="nif">NIF</label>
-                                <input type="text" name="nif" id="nif" value="<?= htmlspecialchars($user['nif'] ?? '') ?>" maxlength="9" minlength="9" required>
+                                <input type="text" name="nif" id="nif" value="<?= htmlspecialchars($form_nif) ?>" maxlength="9" minlength="9">
                             </div>
 
                             <div class="perfil-field">
                                 <label for="email">Email</label>
-                                <input type="email" name="email" value="<?= htmlspecialchars($form_email) ?>">
+                                <input type="email" name="email" id="email" value="<?= htmlspecialchars($form_email) ?>" required>
+                            </div>
+
+                            <div class="perfil-field">
+                                <label for="telefone_indicativo">Indicativo</label>
+                                <select name="telefone_indicativo" id="telefone_indicativo" required>
+                                    <option value="+351" data-max="9" <?= $form_telefone_indicativo === '+351' ? 'selected' : '' ?>>🇵🇹 +351 Portugal</option>
+                                    <option value="+34" data-max="9" <?= $form_telefone_indicativo === '+34' ? 'selected' : '' ?>>🇪🇸 +34 Espanha</option>
+                                    <option value="+33" data-max="9" <?= $form_telefone_indicativo === '+33' ? 'selected' : '' ?>>🇫🇷 +33 França</option>
+                                    <option value="+41" data-max="9" <?= $form_telefone_indicativo === '+41' ? 'selected' : '' ?>>🇨🇭 +41 Suíça</option>
+                                    <option value="+352" data-max="9" <?= $form_telefone_indicativo === '+352' ? 'selected' : '' ?>>🇱🇺 +352 Luxemburgo</option>
+                                    <option value="+44" data-max="10" <?= $form_telefone_indicativo === '+44' ? 'selected' : '' ?>>🇬🇧 +44 Reino Unido</option>
+                                    <option value="+49" data-max="11" <?= $form_telefone_indicativo === '+49' ? 'selected' : '' ?>>🇩🇪 +49 Alemanha</option>
+                                    <option value="+39" data-max="10" <?= $form_telefone_indicativo === '+39' ? 'selected' : '' ?>>🇮🇹 +39 Itália</option>
+                                    <option value="+55" data-max="11" <?= $form_telefone_indicativo === '+55' ? 'selected' : '' ?>>🇧🇷 +55 Brasil</option>
+                                    <option value="+244" data-max="9" <?= $form_telefone_indicativo === '+244' ? 'selected' : '' ?>>🇦🇴 +244 Angola</option>
+                                </select>
+                            </div>
+
+                            <div class="perfil-field">
+                                <label for="telefone">Telefone</label>
+                                <input type="text" name="telefone" id="telefone" value="<?= htmlspecialchars($form_telefone) ?>">
                             </div>
                         </div>
 
-                        <div class="perfil-field">
-                        <label for="telefone_indicativo">Indicativo</label>
-                        <select name="telefone_indicativo" id="telefone_indicativo" required>
-                            <option value="+351" data-max="9" <?= $form_telefone_indicativo === '+351' ? 'selected' : '' ?>>🇵🇹 +351 Portugal</option>
-                            <option value="+34" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+34' ? 'selected' : '' ?>>🇪🇸 +34 Espanha</option>
-                            <option value="+33" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+33' ? 'selected' : '' ?>>🇫🇷 +33 França</option>
-                            <option value="+41" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+41' ? 'selected' : '' ?>>🇨🇭 +41 Suíça</option>
-                            <option value="+352" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+352' ? 'selected' : '' ?>>🇱🇺 +352 Luxemburgo</option>
-                            <option value="+44" data-max="10" <?= ($user['telefone_indicativo'] ?? '') === '+44' ? 'selected' : '' ?>>🇬🇧 +44 Reino Unido</option>
-                            <option value="+49" data-max="11" <?= ($user['telefone_indicativo'] ?? '') === '+49' ? 'selected' : '' ?>>🇩🇪 +49 Alemanha</option>
-                            <option value="+39" data-max="10" <?= ($user['telefone_indicativo'] ?? '') === '+39' ? 'selected' : '' ?>>🇮🇹 +39 Itália</option>
-                            <option value="+55" data-max="11" <?= ($user['telefone_indicativo'] ?? '') === '+55' ? 'selected' : '' ?>>🇧🇷 +55 Brasil</option>
-                            <option value="+244" data-max="9" <?= ($user['telefone_indicativo'] ?? '') === '+244' ? 'selected' : '' ?>>🇦🇴 +244 Angola</option>
-                        </select>
-                    </div>
-
-                    <div class="perfil-field">
-                        <label for="telefone">Telefone</label>
-                        <input type="text" name="telefone" value="<?= htmlspecialchars($form_telefone) ?>">
-                    </div>
-
                         <div class="perfil-actions">
-                            <button type="submit" name="guardar_perfil" class="btn-perfil btn-salvar">Guardar Alterações</button>
+                            <button type="submit" name="guardar_perfil" class="btn-perfil btn-salvar">
+                                Guardar Alterações
+                            </button>
+
+                            <a href="apagar_conta.php" class="btn-apagar-conta">
+                                Apagar a minha conta
+                            </a>
                         </div>
                     </form>
                 </div>
             </section>
-
-            <a href="apagar_conta.php" class="btn-danger">
-            Apagar a minha conta
-            </a>
 
             <section class="perfil-section <?= $tab_ativa === 'password' ? 'active' : '' ?>" id="tab-password">
                 <div class="perfil-box">
@@ -962,10 +975,11 @@ $marcacoes = $stmtMarc->get_result();
                                 <input type="password" name="confirmar_password" id="confirmar_password" required>
                             </div>
                         </div>
-                        
 
                         <div class="perfil-actions">
-                            <button type="submit" name="alterar_password" class="btn-perfil btn-salvar">Alterar Password</button>
+                            <button type="submit" name="alterar_password" class="btn-perfil btn-salvar">
+                                Alterar Password
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -989,9 +1003,11 @@ $marcacoes = $stmtMarc->get_result();
                                         <th>Repetir</th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     <?php while ($enc = $encomendas->fetch_assoc()): ?>
                                         <?php $pdf = 'notas_encomenda/nota_encomenda_' . (int)$enc['id'] . '.pdf'; ?>
+
                                         <tr>
                                             <td>#<?= (int)$enc['id'] ?></td>
                                             <td><?= number_format((float)$enc['total'], 2, ',', '.') ?>€</td>
@@ -1022,53 +1038,6 @@ $marcacoes = $stmtMarc->get_result();
                                                 </form>
                                             </td>
                                         </tr>
-
-                                        <tr id="detalhes-<?= (int)$enc['id'] ?>" class="linha-detalhes" style="display:none;">
-                                            <td colspan="7">
-                                                <div class="detalhes-encomenda-box">
-                                                    <?php
-                                                    $enc_id = (int)$enc['id'];
-                                                    $stmtProdutosEnc = $conn->prepare("
-                                                        SELECT p.nome, p.imagem, c.quantidade, p.preco
-                                                        FROM carrinho c
-                                                        INNER JOIN produtos p ON c.produto_id = p.id
-                                                        WHERE c.encomenda_id = ?
-                                                    ");
-                                                    $stmtProdutosEnc->bind_param("i", $enc_id);
-                                                    $stmtProdutosEnc->execute();
-                                                    $produtosEnc = $stmtProdutosEnc->get_result();
-                                                    ?>
-
-                                                    <?php if ($produtosEnc && $produtosEnc->num_rows > 0): ?>
-                                                        <div class="detalhes-produtos">
-                                                            <?php while ($produtoEnc = $produtosEnc->fetch_assoc()): ?>
-                                                                <?php $subtotalProduto = (float)$produtoEnc['preco'] * (int)$produtoEnc['quantidade']; ?>
-                                                                <div class="produto-detalhe-item">
-                                                                    <div class="produto-img">
-                                                                        <img src="/nrdetail/uploads/produtos/<?= htmlspecialchars($produtoEnc['imagem']) ?>" alt="<?= htmlspecialchars($produtoEnc['nome']) ?>">
-                                                                    </div>
-
-                                                                    <div class="produto-info">
-                                                                        <strong><?= htmlspecialchars($produtoEnc['nome']) ?></strong>
-                                                                        <span class="produto-meta">Quantidade: <?= (int)$produtoEnc['quantidade'] ?>x</span>
-                                                                        <span class="produto-meta">Preço unitário: <?= number_format((float)$produtoEnc['preco'], 2, ',', '.') ?>€</span>
-                                                                    </div>
-
-                                                                    <div class="produto-subtotal">
-                                                                        <span>Subtotal</span>
-                                                                        <strong><?= number_format($subtotalProduto, 2, ',', '.') ?>€</strong>
-                                                                    </div>
-                                                                </div>
-                                                            <?php endwhile; ?>
-                                                        </div>
-                                                    <?php else: ?>
-                                                        <p class="perfil-empty">Sem produtos associados.</p>
-                                                    <?php endif; ?>
-
-                                                    <?php $stmtProdutosEnc->close(); ?>
-                                                </div>
-                                            </td>
-                                        </tr>
                                     <?php endwhile; ?>
                                 </tbody>
                             </table>
@@ -1095,6 +1064,7 @@ $marcacoes = $stmtMarc->get_result();
                                         <th>Ação</th>
                                     </tr>
                                 </thead>
+
                                 <tbody>
                                     <?php while ($marc = $marcacoes->fetch_assoc()): ?>
                                         <tr>
@@ -1105,7 +1075,9 @@ $marcacoes = $stmtMarc->get_result();
                                             <td>
                                                 <form method="post" onsubmit="return confirm('Tens a certeza que queres cancelar esta marcação?');">
                                                     <input type="hidden" name="marcacao_id" value="<?= (int)$marc['id'] ?>">
-                                                    <button type="submit" name="cancelar_marcacao" class="perfil-link-btn">Cancelar</button>
+                                                    <button type="submit" name="cancelar_marcacao" class="perfil-link-btn">
+                                                        Cancelar
+                                                    </button>
                                                 </form>
                                             </td>
                                         </tr>
@@ -1118,28 +1090,12 @@ $marcacoes = $stmtMarc->get_result();
                     <?php endif; ?>
                 </div>
             </section>
-        </main>
 
+        </main>
     </div>
 </div>
 
-<footer class="footer">
-    <div class="footer-container">
-        <div class="footer-logo">
-            <img src="imagens/logo.png" alt="NR Detail Logo">
-        </div>
-
-        <div class="footer-links">
-            <a href="privacidade.php">Política de Privacidade</a>
-            <a href="termos.php">Termos e Condições</a>
-            <a href="cookies.php">Política de Cookies</a>
-        </div>
-
-        <div class="footer-copy">
-            <p>© <?= date("Y"); ?> NR Detail Car & Care - Todos os direitos reservados</p>
-        </div>
-    </div>
-</footer>
+<?php include('includes/footer.php'); ?>
 
 <script>
 const nifInput = document.getElementById('nif');
@@ -1164,16 +1120,6 @@ tabButtons.forEach(button => {
     });
 });
 
-function toggleDetalhes(id) {
-    const linha = document.getElementById('detalhes-' + id);
-
-    if (linha.style.display === 'none' || linha.style.display === '') {
-        linha.style.display = 'table-row';
-    } else {
-        linha.style.display = 'none';
-    }
-}
-
 const fotoInput = document.getElementById('foto_perfil');
 const previewBox = document.getElementById('preview-foto');
 const previewImg = document.getElementById('preview-foto-img');
@@ -1181,6 +1127,7 @@ const previewImg = document.getElementById('preview-foto-img');
 if (fotoInput && previewBox && previewImg) {
     fotoInput.addEventListener('change', function () {
         const file = this.files[0];
+
         if (file) {
             previewImg.src = URL.createObjectURL(file);
             previewBox.style.display = 'block';
@@ -1189,7 +1136,6 @@ if (fotoInput && previewBox && previewImg) {
         }
     });
 }
-
 
 const telInput = document.getElementById('telefone');
 const selectIndicativo = document.getElementById('telefone_indicativo');
