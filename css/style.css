@@ -1215,3 +1215,25 @@ button:hover,
         display: flex;
     }
 }
+
+.btn-danger {
+    background-color: #c0392b;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    background-color: #922b21;
+}
+
+.erro {
+    background-color: #ffd6d6;
+    color: #900;
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}

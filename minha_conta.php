@@ -937,6 +937,10 @@ $marcacoes = $stmtMarc->get_result();
                 </div>
             </section>
 
+            <a href="apagar_conta.php" class="btn-danger">
+            Apagar a minha conta
+            </a>
+
             <section class="perfil-section <?= $tab_ativa === 'password' ? 'active' : '' ?>" id="tab-password">
                 <div class="perfil-box">
                     <h3>Alterar Password</h3>
@@ -958,6 +962,7 @@ $marcacoes = $stmtMarc->get_result();
                                 <input type="password" name="confirmar_password" id="confirmar_password" required>
                             </div>
                         </div>
+                        
 
                         <div class="perfil-actions">
                             <button type="submit" name="alterar_password" class="btn-perfil btn-salvar">Alterar Password</button>
