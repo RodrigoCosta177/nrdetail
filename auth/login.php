@@ -24,416 +24,369 @@ if (isset($_POST['login'])) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
     <title>Login - NR Detail</title>
-    <link rel="stylesheet" href="../css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        body.login-page {
-    margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    min-height: 100vh;
-    background: #201f1f; /* preto profundo */
-    }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+        body {
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            background: #0a0a0a;
+        }
+
+        /* Fundo full-screen */
+        .bg {
+            position: fixed;
+            inset: 0;
+            background: url('../imagens/login-carro.jpg') center center / cover no-repeat;
+            z-index: 0;
+        }
+        .bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg,
+                rgba(0,0,0,0.75) 0%,
+                rgba(10,10,10,0.55) 50%,
+                rgba(0,0,0,0.80) 100%);
+        }
+
+        /* Partículas decorativas */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 204, 0, 0.12);
+            animation: float linear infinite;
+        }
+        .particle:nth-child(1)  { width: 6px;  height: 6px;  left: 15%;  animation-duration: 12s; animation-delay: 0s;   bottom: -10px; }
+        .particle:nth-child(2)  { width: 4px;  height: 4px;  left: 35%;  animation-duration: 18s; animation-delay: 2s;   bottom: -10px; }
+        .particle:nth-child(3)  { width: 8px;  height: 8px;  left: 55%;  animation-duration: 14s; animation-delay: 1s;   bottom: -10px; }
+        .particle:nth-child(4)  { width: 3px;  height: 3px;  left: 75%;  animation-duration: 20s; animation-delay: 4s;   bottom: -10px; }
+        .particle:nth-child(5)  { width: 5px;  height: 5px;  left: 88%;  animation-duration: 16s; animation-delay: 0.5s; bottom: -10px; }
+        @keyframes float {
+            to { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        }
+
+        /* Wrapper */
         .login-wrapper {
+            position: relative;
+            z-index: 2;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px 20px;
+            padding: 20px;
         }
 
-        .login-box {
+        /* Card glassmorphism */
+        .glass-card {
             width: 100%;
-            max-width: 1180px;
-            min-height: 680px;
-            background: #f5f5f5;
-            border-radius: 28px;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            border-radius: 24px;
+            padding: 40px 36px 32px;
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.45),
+                0 0 0 1px rgba(255,204,0,0.08) inset;
+            animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .login-left {
-            padding: 36px 46px 28px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
+        /* Logo + título */
+        .card-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
-
-        .login-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .login-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .login-brand img {
-            height: 58px;
+        .card-header img {
+            height: 60px;
             width: auto;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 2px 8px rgba(255,204,0,0.25));
+        }
+        .card-header h1 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 32px;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+        .card-header p {
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 6px;
+            font-weight: 300;
+        }
+
+        /* Erro */
+        .error-msg {
+            background: rgba(220, 38, 38, 0.18);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            color: #fca5a5;
+            padding: 11px 14px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13.5px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* Campos */
+        .field {
+            margin-bottom: 16px;
+        }
+        .field label {
             display: block;
-        }
-
-        .login-brand-text {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.1;
-        }
-
-        .login-brand-text strong {
-            font-size: 21px;
-            color: #111827;
-        }
-
-        .login-brand-text span {
-            font-size: 13px;
-            color: #6b7280;
-        }
-
-        .btn-home {
-            text-decoration: none;
-            background: #11293b;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 14px;
+            font-size: 12.5px;
             font-weight: 600;
-            transition: 0.25s ease;
-            white-space: nowrap;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 7px;
         }
-
-        .btn-home:hover {
-            background: #ffcc00;
-            color: black;
-        }
-
-        .login-content {
-            width: 100%;
-            max-width: 430px;
-            margin: 0 auto;
-        }
-
-        .login-content h1 {
-            margin: 0 0 12px;
-            font-size: 38px;
-            color: #111827;
-        }
-
-        .login-content .subtexto {
-            margin: 0 0 28px;
-            color: #6b7280;
-            font-size: 15px;
-            line-height: 1.6;
-        }
-
-        .error {
-            background: #ffe1e1;
-            color: #9b1c1c;
-            padding: 12px 14px;
-            border-radius: 10px;
-            margin-bottom: 18px;
-            font-weight: 600;
-            font-size: 14px;
-            text-align: left;
-        }
-
-        .input-group {
-            margin-bottom: 18px;
+        .field-wrap {
             position: relative;
         }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #374151;
-            position: static;
-            background: none;
-            padding: 0;
-        }
-
-        .input-group input {
+        .field-wrap input {
             width: 100%;
             height: 48px;
-            border: 1px solid #d1d5db;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px;
-            background: #eef2f7;
-            color: #111827;
-            padding: 0 14px;
-            outline: none;
-            transition: 0.25s ease;
+            color: #ffffff;
+            font-family: 'Barlow', sans-serif;
             font-size: 15px;
+            padding: 0 44px 0 16px;
+            outline: none;
+            transition: all 0.25s ease;
         }
-
-        .input-group input:focus {
+        .field-wrap input::placeholder { color: rgba(255,255,255,0.25); }
+        .field-wrap input:focus {
             border-color: #ffcc00;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.16);
+            background: rgba(255,204,0,0.07);
+            box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
         }
-
-        .login-extra {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: -2px;
-            margin-bottom: 18px;
+        .field-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.3);
+            font-size: 17px;
+            cursor: pointer;
+            transition: color 0.2s;
+            user-select: none;
         }
+        .field-icon:hover { color: #ffcc00; }
 
-        .login-extra a {
-            color: #315efb;
+        /* Esqueci password */
+        .forgot {
+            text-align: right;
+            margin-top: -6px;
+            margin-bottom: 22px;
+        }
+        .forgot a {
+            font-size: 13px;
+            color: rgba(255,255,255,0.45);
             text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
+            transition: color 0.2s;
         }
+        .forgot a:hover { color: #ffcc00; }
 
-        .login-extra a:hover {
-            text-decoration: underline;
-        }
-
-        .btn-login {
+        /* Botão principal */
+        .btn-main {
             width: 100%;
             height: 50px;
             border: none;
             border-radius: 12px;
-            background: #11293b;
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.25s ease;
-        }
-
-        .btn-login:hover {
             background: #ffcc00;
-            color: black;
+            color: #111;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
         }
+        .btn-main::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0);
+            transition: background 0.2s;
+        }
+        .btn-main:hover {
+            background: #ffe033;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255,204,0,0.35);
+        }
+        .btn-main:active { transform: translateY(0); }
 
+        /* Divider */
         .divider {
             display: flex;
             align-items: center;
-            gap: 14px;
-            margin: 24px 0 18px;
-            color: #9ca3af;
-            font-size: 14px;
+            gap: 12px;
+            margin: 22px 0 18px;
+            color: rgba(255,255,255,0.25);
+            font-size: 13px;
         }
-
-        .divider::before,
-        .divider::after {
+        .divider::before, .divider::after {
             content: '';
             flex: 1;
             height: 1px;
-            background: #d1d5db;
+            background: rgba(255,255,255,0.1);
         }
 
-        .social-login {
-            display: grid;
-            gap: 12px;
+        
+        .btn-google:hover {
+            background: rgba(255,255,255,0.11);
+            border-color: rgba(255,255,255,0.22);
+            color: #fff;
         }
 
-        .social-btn {
-            width: 100%;
-            height: 48px;
-            border: 1px solid #dbe2ea;
-            background: #eef2f7;
+        /* Rodapé do card */
+        .card-footer {
+            text-align: center;
+            margin-top: 22px;
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.4);
+        }
+        .card-footer a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .card-footer a:hover { opacity: 0.8; }
+
+        /* Botão voltar (canto) */
+        .btn-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px;
-            text-decoration: none;
-            color: #374151;
+            color: rgba(255,255,255,0.7);
+            font-family: 'Barlow', sans-serif;
+            font-size: 13.5px;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: 0.25s ease;
-        }
-
-        .social-btn:hover {
-            background: white;
-            border-color: #cfd8e3;
-        }
-
-        .social-icon {
-            font-size: 18px;
-        }
-
-        .login-bottom {
-            text-align: center;
-            margin-top: 26px;
-            color: #6b7280;
-            font-size: 14px;
-        }
-
-        .login-bottom a {
-            color: #315efb;
+            padding: 10px 16px;
             text-decoration: none;
-            font-weight: 600;
+            transition: all 0.25s;
+        }
+        .btn-back:hover {
+            background: rgba(255,204,0,0.15);
+            border-color: rgba(255,204,0,0.4);
+            color: #ffcc00;
         }
 
-        .login-bottom a:hover {
-            text-decoration: underline;
-        }
-
-        .login-footer {
-            margin-top: 28px;
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .login-right {
-            position: relative;
-            min-height: 100%;
-            background: #111;
-        }
-
-        .login-right img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .login-right-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.28));
-        }
-
-        @media (max-width: 980px) {
-            .login-box {
-                grid-template-columns: 1fr;
-                max-width: 540px;
-                min-height: auto;
-            }
-
-            .login-right {
-                display: none;
-            }
-
-            .login-left {
-                padding: 30px 24px 24px;
-            }
-
-            .login-content h1 {
-                font-size: 32px;
-            }
-
-            .login-top {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        @media (max-width: 520px) {
-            .login-wrapper {
-                padding: 16px;
-            }
-
-            .login-box {
-                border-radius: 22px;
-            }
-
-            .login-content h1 {
-                font-size: 28px;
-            }
-
-            .btn-home {
-                width: 100%;
-                text-align: center;
-            }
-
-            .login-brand img {
-                height: 50px;
-            }
+        @media (max-width: 480px) {
+            .glass-card { padding: 32px 22px 26px; }
+            .card-header h1 { font-size: 26px; }
         }
     </style>
 </head>
-<body class="login-page">
+<body>
+
+<div class="bg"></div>
+
+<div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<a href="../index.php" class="btn-back">← Início</a>
 
 <div class="login-wrapper">
-    <div class="login-box">
+    <div class="glass-card">
 
-        <div class="login-left">
-            <div>
-                <div class="login-top">
-                    <div class="login-brand">
-                        <img src="../imagens/logo_1.png" alt="NR Detail Logo">
-                        <div class="login-brand-text">
-                        </div>
-                        </div>
-
-                    <a href="../index.php" class="btn-home">← Voltar ao início</a>
-                </div>
-
-                <div class="login-content">
-                    <h1>Bem-vindo de volta 👋</h1>
-                    <p class="subtexto">
-                        Inicia sessão para gerires as tuas marcações, acompanhares encomendas e acederes à tua conta.
-                    </p>
-
-                    <?php if ($error): ?>
-                        <div class="error"><?= htmlspecialchars($error) ?></div>
-                    <?php endif; ?>
-
-                    <form method="POST">
-                        <div class="input-group">
-                            <label for="email">Email</label>
-                            <input type="email" name="email" id="email" required placeholder="exemplo@email.com">
-                        </div>
-
-                        <div class="input-group">
-                            <label for="password">Password</label>
-                            <input type="password" name="password" id="password" required placeholder="A tua password">
-                        </div>
-
-                        <div class="login-extra">
-                            <a href="esqueci_password.php">Esqueci-me da password</a>
-                        </div>
-
-                        <button type="submit" name="login" class="btn-login">Iniciar sessão</button>
-                    </form>
-
-                    <div class="divider">ou</div>
-
-                    <div class="social-login">
-                        <a href="google_login.php" class="social-btn">
-                            <span class="social-icon">🔵</span>
-                            Entrar com Google
-                        </a>
-                    </div>
-
-                    <div class="login-bottom">
-                        Não tens conta?
-                        <a href="registar.php">Regista-te</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="login-footer">
-                © <?= date("Y"); ?> NR Detail. Todos os direitos reservados.
-            </div>
+        <div class="card-header">
+            <img src="../imagens/logo_1.png" alt="NR Detail">
+            <h1>BEM-VINDO DE VOLTA</h1>
+            <p>Inicia sessão na tua conta</p>
         </div>
 
-        <div class="login-right">
-            <img src="../imagens/login-carro.jpg" alt="Imagem decorativa login">
-            <div class="login-right-overlay"></div>
+        <?php if ($error): ?>
+            <div class="error-msg">⚠️ <?= htmlspecialchars($error) ?></div>
+        <?php endif; ?>
+
+        <form method="POST">
+            <div class="field">
+                <label for="email">Email</label>
+                <div class="field-wrap">
+                    <input type="email" name="email" id="email" required placeholder="exemplo@email.com">
+                    <span class="field-icon">✉</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="password">Password</label>
+                <div class="field-wrap">
+                    <input type="password" name="password" id="password" required placeholder="A tua password">
+                    <span class="field-icon" onclick="togglePass()" id="passIcon">👁</span>
+                </div>
+            </div>
+
+            <div class="forgot">
+                <a href="esqueci_password.php">Esqueci-me da password</a>
+            </div>
+
+            <button type="submit" name="login" class="btn-main">ENTRAR</button>
+        </form>
+
+        <div class="divider">ou</div>
+
+
+        <div class="card-footer">
+            Não tens conta? <a href="registar.php">Regista-te aqui</a>
         </div>
 
     </div>
 </div>
+
+<script>
+function togglePass() {
+    const input = document.getElementById('password');
+    const icon  = document.getElementById('passIcon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+    } else {
+        input.type = 'password';
+        icon.textContent = '👁';
+    }
+}
+</script>
 
 </body>
 </html>

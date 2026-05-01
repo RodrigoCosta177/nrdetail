@@ -58,337 +58,336 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recuperar Password - NR Detail</title>
-    <link rel="stylesheet" href="../css/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet">
 
     <style>
-        body.login-page {
+        *, *::before, *::after {
+            box-sizing: border-box;
             margin: 0;
-            background: #050505;
-            font-family: 'Segoe UI', sans-serif;
-            min-height: 100vh;
+            padding: 0;
         }
 
+        body {
+            font-family: 'Barlow', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            background: #0a0a0a;
+        }
+
+        /* Fundo */
+        .bg {
+            position: fixed;
+            inset: 0;
+            background: url('../imagens/login-carro.jpg') center center / cover no-repeat;
+            z-index: 0;
+        }
+
+        .bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(0,0,0,0.78) 0%,
+                rgba(10,10,10,0.55) 50%,
+                rgba(0,0,0,0.82) 100%
+            );
+        }
+
+        /* Partículas */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 204, 0, 0.12);
+            animation: float linear infinite;
+        }
+
+        .particle:nth-child(1) { width: 6px; height: 6px; left: 15%; animation-duration: 12s; bottom: -10px; }
+        .particle:nth-child(2) { width: 4px; height: 4px; left: 35%; animation-duration: 18s; animation-delay: 2s; bottom: -10px; }
+        .particle:nth-child(3) { width: 8px; height: 8px; left: 55%; animation-duration: 14s; animation-delay: 1s; bottom: -10px; }
+        .particle:nth-child(4) { width: 3px; height: 3px; left: 75%; animation-duration: 20s; animation-delay: 4s; bottom: -10px; }
+        .particle:nth-child(5) { width: 5px; height: 5px; left: 88%; animation-duration: 16s; animation-delay: 0.5s; bottom: -10px; }
+
+        @keyframes float {
+            to {
+                transform: translateY(-110vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Botão voltar */
+        .btn-back {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 12px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13.5px;
+            font-weight: 600;
+            padding: 10px 16px;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,204,0,0.15);
+            border-color: rgba(255,204,0,0.4);
+            color: #ffcc00;
+        }
+
+        /* Wrapper */
         .login-wrapper {
+            position: relative;
+            z-index: 2;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 30px 20px;
+            padding: 20px;
         }
 
-        .login-box {
-            width: 100%;
-            max-width: 1180px;
-            min-height: 680px;
-            background: #f5f5f5;
-            border-radius: 28px;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.05),
-                0 20px 60px rgba(0,0,0,0.6);
-        }
-
-        .login-left {
-            padding: 36px 46px 28px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .login-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .login-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .login-brand img {
-            height: 58px;
-            width: auto;
-            display: block;
-        }
-
-        .login-brand-text {
-            display: flex;
-            flex-direction: column;
-            line-height: 1.1;
-        }
-
-        .login-brand-text strong {
-            font-size: 21px;
-            color: #111827;
-        }
-
-        .login-brand-text span {
-            font-size: 13px;
-            color: #6b7280;
-        }
-
-        .btn-home {
-            text-decoration: none;
-            background: #11293b;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            transition: 0.25s ease;
-            white-space: nowrap;
-        }
-
-        .btn-home:hover {
-            background: #ffcc00;
-            color: black;
-        }
-
-        .login-content {
+        /* Card */
+        .glass-card {
             width: 100%;
             max-width: 430px;
-            margin: 0 auto;
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.13);
+            border-radius: 24px;
+            padding: 40px 36px 32px;
+            box-shadow:
+                0 8px 32px rgba(0,0,0,0.45),
+                0 0 0 1px rgba(255,204,0,0.08) inset;
+            animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
-        .login-content h1 {
-            margin: 0 0 12px;
-            font-size: 38px;
-            color: #111827;
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(28px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .login-content .subtexto {
-            margin: 0 0 28px;
-            color: #6b7280;
-            font-size: 15px;
-            line-height: 1.6;
+        /* Header */
+        .card-header {
+            text-align: center;
+            margin-bottom: 30px;
         }
 
-        .error {
-            background: #ffe1e1;
-            color: #9b1c1c;
+        .card-header img {
+            height: 60px;
+            width: auto;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 2px 8px rgba(255,204,0,0.25));
+        }
+
+        .card-header h1 {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 30px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .card-header p {
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* Alertas */
+        .error-msg,
+        .success-msg {
             padding: 12px 14px;
-            border-radius: 10px;
+            border-radius: 12px;
             margin-bottom: 18px;
+            font-size: 13.5px;
             font-weight: 600;
-            font-size: 14px;
-            text-align: left;
+            text-align: center;
         }
 
-        .success {
-            background: #e3ffe8;
-            color: #166534;
-            padding: 12px 14px;
-            border-radius: 10px;
-            margin-bottom: 18px;
-            font-weight: 600;
-            font-size: 14px;
-            text-align: left;
+        .error-msg {
+            background: rgba(220, 38, 38, 0.18);
+            border: 1px solid rgba(220, 38, 38, 0.35);
+            color: #fca5a5;
         }
 
-        .input-group {
-            margin-bottom: 18px;
+        .success-msg {
+            background: rgba(34,197,94,0.16);
+            border: 1px solid rgba(34,197,94,0.3);
+            color: #86efac;
         }
 
-        .input-group label {
+        /* Campo */
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .field label {
             display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
+            font-size: 12.5px;
             font-weight: 600;
-            color: #374151;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 7px;
         }
 
-        .input-group input {
+        .field-wrap {
+            position: relative;
+        }
+
+        .field-wrap input {
             width: 100%;
             height: 48px;
-            border: 1px solid #d1d5db;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 12px;
-            background: #eef2f7;
-            color: #111827;
-            padding: 0 14px;
-            outline: none;
-            transition: 0.25s ease;
+            color: #ffffff;
             font-size: 15px;
+            padding: 0 44px 0 16px;
+            outline: none;
+            transition: all 0.25s ease;
         }
 
-        .input-group input:focus {
+        .field-wrap input::placeholder {
+            color: rgba(255,255,255,0.25);
+        }
+
+        .field-wrap input:focus {
             border-color: #ffcc00;
-            background: white;
-            box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.16);
+            background: rgba(255,204,0,0.07);
+            box-shadow: 0 0 0 3px rgba(255,204,0,0.12);
         }
 
-        .btn-login {
+        .field-icon {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.3);
+            font-size: 17px;
+        }
+
+        /* Botão */
+        .btn-main {
             width: 100%;
             height: 50px;
             border: none;
             border-radius: 12px;
-            background: #11293b;
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.25s ease;
-            margin-top: 6px;
-        }
-
-        .btn-login:hover {
             background: #ffcc00;
-            color: black;
+            color: #111;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 17px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.25s ease;
         }
 
-        .login-bottom {
+        .btn-main:hover {
+            background: #ffe033;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(255,204,0,0.35);
+        }
+
+        /* Footer */
+        .card-footer {
             text-align: center;
-            margin-top: 24px;
-            color: #6b7280;
-            font-size: 14px;
+            margin-top: 22px;
+            font-size: 13.5px;
+            color: rgba(255,255,255,0.4);
         }
 
-        .login-bottom a {
-            color: #315efb;
+        .card-footer a {
+            color: #ffcc00;
             text-decoration: none;
             font-weight: 600;
         }
 
-        .login-bottom a:hover {
-            text-decoration: underline;
+        .card-footer a:hover {
+            opacity: 0.8;
         }
 
-        .login-footer {
-            margin-top: 28px;
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .login-right {
-            position: relative;
-            min-height: 100%;
-            background: #111;
-        }
-
-        .login-right img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .login-right-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.28));
-        }
-
-        @media (max-width: 980px) {
-            .login-box {
-                grid-template-columns: 1fr;
-                max-width: 540px;
-                min-height: auto;
+        @media (max-width: 480px) {
+            .glass-card {
+                padding: 32px 22px 26px;
             }
 
-            .login-right {
-                display: none;
-            }
-
-            .login-left {
-                padding: 30px 24px 24px;
-            }
-
-            .login-content h1 {
-                font-size: 32px;
-            }
-
-            .login-top {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        @media (max-width: 520px) {
-            .login-wrapper {
-                padding: 16px;
-            }
-
-            .login-box {
-                border-radius: 22px;
-            }
-
-            .login-content h1 {
-                font-size: 28px;
-            }
-
-            .btn-home {
-                width: 100%;
-                text-align: center;
-            }
-
-            .login-brand img {
-                height: 50px;
+            .card-header h1 {
+                font-size: 25px;
             }
         }
     </style>
 </head>
-<body class="login-page">
+<body>
+
+<div class="bg"></div>
+
+<div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<a href="../index.php" class="btn-back">← Início</a>
 
 <div class="login-wrapper">
-    <div class="login-box">
+    <div class="glass-card">
 
-        <div class="login-left">
-            <div>
-                <div class="login-top">
-                    <div class="login-brand">
-                        <img src="../imagens/logo_1.png" alt="NR Detail Logo">
-                        <div class="login-brand-text">
-                            <strong>NR Detail</strong>
-                            <span>Car & Care</span>
-                        </div>
-                    </div>
-
-                    <a href="../index.php" class="btn-home">← Voltar ao início</a>
-                </div>
-
-                <div class="login-content">
-                    <h1>Recuperar password</h1>
-                    <p class="subtexto">
-                        Introduz o teu email e vamos enviar-te um link para redefinires a password da tua conta.
-                    </p>
-
-                    <?php if (!empty($mensagem)): ?>
-                        <div class="success"><?= htmlspecialchars($mensagem) ?></div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($erro)): ?>
-                        <div class="error"><?= htmlspecialchars($erro) ?></div>
-                    <?php endif; ?>
-
-                    <form method="post">
-                        <div class="input-group">
-                            <label for="email">Email</label>
-                            <input type="email" name="email" id="email" required placeholder="exemplo@email.com">
-                        </div>
-
-                        <button type="submit" class="btn-login">Enviar Link</button>
-                    </form>
-
-                    <div class="login-bottom">
-                        <a href="login.php">Voltar ao login</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="login-footer">
-                © <?= date("Y"); ?> NR Detail. Todos os direitos reservados.
-            </div>
+        <div class="card-header">
+            <img src="../imagens/logo_1.png" alt="NR Detail">
+            <h1>RECUPERAR PASSWORD</h1>
+            <p>
+                Introduz o teu email e enviaremos um link seguro<br>
+                para redefinires a tua password.
+            </p>
         </div>
 
-        <div class="login-right">
-            <img src="../imagens/login-carro.jpg" alt="Imagem decorativa recuperar password">
-            <div class="login-right-overlay"></div>
+        <?php if (!empty($mensagem)): ?>
+            <div class="success-msg">✅ <?= htmlspecialchars($mensagem) ?></div>
+        <?php endif; ?>
+
+        <?php if (!empty($erro)): ?>
+            <div class="error-msg">⚠️ <?= htmlspecialchars($erro) ?></div>
+        <?php endif; ?>
+
+        <form method="POST">
+            <div class="field">
+                <label for="email">Email</label>
+                <div class="field-wrap">
+                    <input type="email" name="email" id="email" required placeholder="exemplo@email.com">
+                    <span class="field-icon">✉</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-main">ENVIAR LINK</button>
+        </form>
+
+        <div class="card-footer">
+            Lembraste da password? <a href="login.php">Voltar ao login</a>
         </div>
 
     </div>

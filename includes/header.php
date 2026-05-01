@@ -61,12 +61,12 @@ if (isset($_SESSION['user'])) {
                 <a href="admin.php" class="admin-btn">Admin</a>
             <?php endif; ?>
 
-            <a href="auth/logout.php">Logout</a>
+            <a href="auth/logout.php">Sair</a>
         <?php else: ?>
             <a href="carrinho.php" id="cart-toggle">
                 Carrinho 🛒 (<span id="contador"><?= $contador_carrinho ?></span>)
             </a>
-            <a href="auth/login.php">Login</a>
+            <a href="auth/login.php">Entrar</a>
         <?php endif; ?>
     </nav>
 </header>

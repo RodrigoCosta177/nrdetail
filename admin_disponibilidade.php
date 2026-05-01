@@ -14,453 +14,226 @@ $erro = '';
 /* =========================
    ADICIONAR DISPONIBILIDADE
 ========================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adicionar_disponibilidade'])) {
-    $data = trim($_POST['data'] ?? '');
-    $modo = trim($_POST['modo'] ?? '');
-    $hora = trim($_POST['hora'] ?? '');
-    $vagas = (int)($_POST['vagas'] ?? 0);
-    $ativo = isset($_POST['ativo']) ? 1 : 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adicionar'])) {
 
-    if (empty($data) || empty($modo) || $vagas < 1) {
-        $erro = "Preenche todos os campos corretamente.";
+    $data = $_POST['data'] ?? '';
+    $modo = $_POST['modo'] ?? '';
+    $hora = $_POST['hora'] ?? '';
+
+    if (!$data || !$modo) {
+        $erro = "Preenche todos os campos.";
     } else {
+
         $horarios = [];
 
-        if ($modo === 'dia_inteiro') {
-            $horarios = ['09:00:00', '10:00:00', '11:00:00', '12:00:00', '14:00:00', '15:00:00', '16:00:00', '17:00:00', '18:00:00'];
-        } elseif ($modo === 'manha') {
-            $horarios = ['09:00:00', '10:00:00', '11:00:00', '12:00:00'];
-        } elseif ($modo === 'tarde') {
-            $horarios = ['14:00:00', '15:00:00', '16:00:00', '17:00:00', '18:00:00'];
-        } elseif ($modo === 'personalizado') {
-            if (empty($hora)) {
-                $erro = "No modo personalizado tens de escolher uma hora.";
-            } else {
+        switch ($modo) {
+            case 'manha':
+                $horarios = ['09:00:00','10:00:00','11:00:00','12:00:00'];
+                break;
+            case 'tarde':
+                $horarios = ['14:00:00','15:00:00','16:00:00','17:00:00','18:00:00'];
+                break;
+            case 'dia':
+                $horarios = ['09:00:00','10:00:00','11:00:00','12:00:00','14:00:00','15:00:00','16:00:00','17:00:00','18:00:00'];
+                break;
+            case 'custom':
+                if (!$hora) {
+                    $erro = "Escolhe uma hora.";
+                    break;
+                }
                 $horarios = [$hora . ':00'];
-            }
-        } else {
-            $erro = "Modo inválido.";
+                break;
         }
 
-        if (empty($erro) && !empty($horarios)) {
-            $adicionados = 0;
-            $ignorados = 0;
+        if (!$erro) {
+            foreach ($horarios as $h) {
 
-            foreach ($horarios as $horaItem) {
-                $stmtCheck = $conn->prepare("SELECT id FROM disponibilidade WHERE data = ? AND hora = ? LIMIT 1");
-                $stmtCheck->bind_param("ss", $data, $horaItem);
-                $stmtCheck->execute();
-                $existe = $stmtCheck->get_result()->fetch_assoc();
-                $stmtCheck->close();
+                $check = $conn->prepare("SELECT id FROM disponibilidade WHERE data=? AND hora=?");
+                $check->bind_param("ss", $data, $h);
+                $check->execute();
+                $res = $check->get_result();
 
-                if ($existe) {
-                    $ignorados++;
-                    continue;
+                if ($res->num_rows == 0) {
+                    $ins = $conn->prepare("INSERT INTO disponibilidade (data, hora, ativo) VALUES (?, ?, 1)");
+                    $ins->bind_param("ss", $data, $h);
+                    $ins->execute();
                 }
-
-                $stmt = $conn->prepare("
-                    INSERT INTO disponibilidade (data, hora, vagas, ativo)
-                    VALUES (?, ?, ?, ?)
-                ");
-                $stmt->bind_param("ssii", $data, $horaItem, $vagas, $ativo);
-
-                if ($stmt->execute()) {
-                    $adicionados++;
-                }
-
-                $stmt->close();
             }
 
-            if ($adicionados > 0) {
-                $mensagem = "Foram adicionados {$adicionados} horário(s)." . ($ignorados > 0 ? " {$ignorados} já existiam e foram ignorados." : "");
-            } else {
-                $erro = "Nenhum horário foi adicionado. Provavelmente já existiam todos.";
-            }
+            $mensagem = "Disponibilidade criada com sucesso.";
         }
     }
 }
 
 /* =========================
-   ATUALIZAR DISPONIBILIDADE
+   APAGAR SLOT
 ========================= */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['atualizar_disponibilidade'])) {
-    $id = (int)($_POST['id'] ?? 0);
-    $vagas = (int)($_POST['vagas'] ?? 0);
-    $ativo = isset($_POST['ativo']) ? 1 : 0;
-
-    if ($id <= 0 || $vagas < 1) {
-        $erro = "Dados inválidos para atualização.";
-    } else {
-        $stmt = $conn->prepare("
-            UPDATE disponibilidade
-            SET vagas = ?, ativo = ?
-            WHERE id = ?
-        ");
-        $stmt->bind_param("iii", $vagas, $ativo, $id);
-
-        if ($stmt->execute()) {
-            $mensagem = "Disponibilidade atualizada com sucesso.";
-        } else {
-            $erro = "Erro ao atualizar disponibilidade.";
-        }
-
-        $stmt->close();
-    }
-}
-
-/* =========================
-   APAGAR DISPONIBILIDADE
-========================= */
-if (isset($_GET['apagar']) && is_numeric($_GET['apagar'])) {
+if (isset($_GET['apagar'])) {
     $id = (int)$_GET['apagar'];
 
-    $stmt = $conn->prepare("DELETE FROM disponibilidade WHERE id = ?");
+    $stmt = $conn->prepare("DELETE FROM disponibilidade WHERE id=?");
     $stmt->bind_param("i", $id);
+    $stmt->execute();
 
-    if ($stmt->execute()) {
-        header("Location: admin_disponibilidade.php?apagado=1");
-        exit;
-    } else {
-        $erro = "Erro ao apagar disponibilidade.";
-    }
-
-    $stmt->close();
+    header("Location: admin_disponibilidade.php");
+    exit;
 }
 
 /* =========================
-   LISTAR DISPONIBILIDADE
+   LISTAR DISPONIBILIDADE + MARCAÇÕES
 ========================= */
-$resDisponibilidade = $conn->query("
-    SELECT id, data, hora, vagas, ativo
-    FROM disponibilidade
-    ORDER BY data ASC, hora ASC
-");
+
+$sql = "
+SELECT 
+d.id,
+d.data,
+d.hora,
+d.ativo,
+m.id AS marcacao_id,
+m.nome,
+m.email,
+m.servico,
+m.user_id
+FROM disponibilidade d
+LEFT JOIN marcacoes m 
+ON d.data = m.data_marcacao AND d.hora = m.hora
+ORDER BY d.data ASC, d.hora ASC
+";
+
+$result = $conn->query($sql);
 ?>
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Disponibilidade - NR Detail</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            background: #111;
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-        }
+<meta charset="UTF-8">
+<title>Admin Disponibilidade</title>
+<link rel="stylesheet" href="css/style.css">
 
-        .admin-disp-page {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+<style>
+body{background:#111;color:#fff;font-family:Segoe UI}
 
-        .admin-disp-page h1 {
-            color: #ffcc00;
-            margin-bottom: 10px;
-        }
+.container{max-width:1100px;margin:40px auto}
 
-        .admin-disp-page p {
-            color: #bbb;
-            margin-bottom: 24px;
-        }
+.box{background:#1a1a1a;padding:20px;border-radius:14px;margin-bottom:20px}
 
-        .mensagem-ok,
-        .mensagem-erro {
-            padding: 12px 14px;
-            border-radius: 10px;
-            margin-bottom: 18px;
-            font-weight: bold;
-        }
+h1,h2{color:#ffcc00}
 
-        .mensagem-ok {
-            background: #16361f;
-            color: #9ff0b3;
-        }
+table{width:100%;border-collapse:collapse}
 
-        .mensagem-erro {
-            background: #3b1616;
-            color: #ffb1b1;
-        }
+td,th{padding:10px;border-bottom:1px solid #2a2a2a}
 
-        .box-admin {
-            background: #1a1a1a;
-            border: 1px solid #2b2b2b;
-            border-radius: 18px;
-            padding: 22px;
-            margin-bottom: 24px;
-        }
+.btn{background:#ffcc00;color:#000;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:bold}
+.btn:hover{background:#e6b800}
 
-        .box-admin h2 {
-            color: #ffcc00;
-            margin-bottom: 18px;
-        }
+.badge-ok{color:#7CFC90}
+.badge-no{color:#ff6b6b}
 
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr auto;
-            gap: 16px;
-            align-items: end;
-        }
-
-        .campo label {
-            display: block;
-            margin-bottom: 8px;
-            color: #ddd;
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .campo input,
-        .campo select {
-            width: 100%;
-            height: 46px;
-            border: 1px solid #333;
-            background: #121212;
-            color: white;
-            border-radius: 10px;
-            padding: 0 12px;
-        }
-
-        .campo input:focus,
-        .campo select:focus {
-        outline: none;
-        border-color: #ffcc00;
-        }
-
-        .campo-check {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-
-        .btn-admin {
-            background: #ffcc00;
-            color: black;
-            border: none;
-            padding: 12px 18px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.25s ease;
-        }
-
-        .btn-admin:hover {
-            background: #e6b800;
-        }
-
-        .btn-apagar {
-            background: #aa2c2c;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .btn-apagar:hover {
-            background: #8c2020;
-        }
-
-        .table-wrap {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #2b2b2b;
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        th {
-            color: #ffcc00;
-        }
-
-        .estado-on {
-            color: #9ff0b3;
-            font-weight: bold;
-        }
-
-        .estado-off {
-            color: #ffb1b1;
-            font-weight: bold;
-        }
-
-        .form-inline {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .form-inline input[type="number"] {
-            width: 90px;
-            height: 38px;
-            border: 1px solid #333;
-            background: #121212;
-            color: white;
-            border-radius: 8px;
-            padding: 0 10px;
-        }
-
-        @media (max-width: 900px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+.form-inline{display:flex;gap:10px;align-items:center}
+input,select{padding:8px;border-radius:8px;border:none;background:#222;color:#fff}
+</style>
 </head>
+
 <body>
 
 <?php include('includes/header.php'); ?>
 
-<div class="admin-disp-page">
-    <h1>Gerir Disponibilidade</h1>
-    <p>Adiciona horários, define vagas e ativa ou desativa disponibilidade sem mexer na base de dados manualmente.</p>
+<div class="container">
 
-    <?php if (isset($_GET['apagado'])): ?>
-        <div class="mensagem-ok">Disponibilidade apagada com sucesso.</div>
-    <?php endif; ?>
+<h1>Disponibilidade</h1>
 
-    <?php if ($mensagem): ?>
-        <div class="mensagem-ok"><?= htmlspecialchars($mensagem) ?></div>
-    <?php endif; ?>
+<?php if($mensagem): ?>
+<div class="box"><?= $mensagem ?></div>
+<?php endif; ?>
 
-    <?php if ($erro): ?>
-        <div class="mensagem-erro"><?= htmlspecialchars($erro) ?></div>
-    <?php endif; ?>
+<?php if($erro): ?>
+<div class="box"><?= $erro ?></div>
+<?php endif; ?>
 
-    <div class="box-admin">
-        <h2>Adicionar Disponibilidade</h2>
+<!-- FORM -->
+<div class="box">
+<h2>Adicionar horários</h2>
 
-        <form method="post">
-    <div class="form-grid">
-        <div class="campo">
-            <label for="data">Data</label>
-            <input type="date" name="data" id="data" required>
-        </div>
+<form method="POST" class="form-inline">
+<input type="date" name="data" required>
 
-        <div class="campo">
-            <label for="modo">Modo</label>
-            <select name="modo" id="modo" required onchange="toggleHoraPersonalizada()">
-                <option value="dia_inteiro">Dia inteiro</option>
-                <option value="manha">Manhã</option>
-                <option value="tarde">Tarde</option>
-                <option value="personalizado">Personalizado</option>
-            </select>
-        </div>
+<select name="modo">
+<option value="manha">Manhã</option>
+<option value="tarde">Tarde</option>
+<option value="dia">Dia inteiro</option>
+<option value="custom">Personalizado</option>
+</select>
 
-        <div class="campo" id="campo-hora" style="display:none;">
-            <label for="hora">Hora personalizada</label>
-            <input type="time" name="hora" id="hora">
-        </div>
+<input type="time" name="hora">
 
-        <div class="campo">
-            <label for="vagas">Vagas</label>
-            <input type="number" name="vagas" id="vagas" min="1" required>
-        </div>
-
-        <div class="campo">
-            <div class="campo-check">
-                <input type="checkbox" name="ativo" id="ativo" checked>
-                <label for="ativo">Ativo</label>
-            </div>
-            <button type="submit" name="adicionar_disponibilidade" class="btn-admin">Adicionar</button>
-        </div>
-    </div>
+<button class="btn" name="adicionar">Adicionar</button>
 </form>
-    </div>
-
-    <div class="box-admin">
-        <h2>Horários Configurados</h2>
-
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Data</th>
-                        <th>Hora</th>
-                        <th>Vagas</th>
-                        <th>Estado</th>
-                        <th>Atualizar</th>
-                        <th>Apagar</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if ($resDisponibilidade && $resDisponibilidade->num_rows > 0): ?>
-                        <?php while ($disp = $resDisponibilidade->fetch_assoc()): ?>
-                            <tr>
-                                <td><?= (int)$disp['id'] ?></td>
-                                <td><?= htmlspecialchars($disp['data']) ?></td>
-                                <td><?= substr(htmlspecialchars($disp['hora']), 0, 5) ?></td>
-                                <td><?= (int)$disp['vagas'] ?></td>
-                                <td>
-                                    <?php if ((int)$disp['ativo'] === 1): ?>
-                                        <span class="estado-on">Ativo</span>
-                                    <?php else: ?>
-                                        <span class="estado-off">Inativo</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td>
-                                    <form method="post" class="form-inline">
-                                        <input type="hidden" name="id" value="<?= (int)$disp['id'] ?>">
-                                        <input type="number" name="vagas" min="1" value="<?= (int)$disp['vagas'] ?>" required>
-                                        <label>
-                                            <input type="checkbox" name="ativo" <?= (int)$disp['ativo'] === 1 ? 'checked' : '' ?>>
-                                            Ativo
-                                        </label>
-                                        <button type="submit" name="atualizar_disponibilidade" class="btn-admin">Guardar</button>
-                                    </form>
-                                </td>
-                                <td>
-                                    <a href="admin.php?apagar_marcacao=<?= (int)$m['id'] ?>"
-                                    class="btn-apagar"
-                                    onclick="if(confirm('Tens a certeza que queres desmarcar esta marcação? Vai abrir o WhatsApp para avisar o cliente.')) { window.open(this.href, '_blank'); return false; } return false;">
-                                        Desmarcar
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endwhile; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7">Ainda não existem horários configurados.</td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
-<script>
-function toggleHoraPersonalizada() {
-    const modo = document.getElementById('modo').value;
-    const campoHora = document.getElementById('campo-hora');
-    const inputHora = document.getElementById('hora');
+<!-- LISTA -->
+<div class="box">
+<h2>Horários</h2>
 
-    if (modo === 'personalizado') {
-        campoHora.style.display = 'block';
-        inputHora.required = true;
-    } else {
-        campoHora.style.display = 'none';
-        inputHora.required = false;
-        inputHora.value = '';
-    }
-}
+<table>
+<tr>
+<th>Data</th>
+<th>Hora</th>
+<th>Estado</th>
+<th>Cliente</th>
+<th>Ações</th>
+</tr>
 
-document.addEventListener('DOMContentLoaded', function () {
-    toggleHoraPersonalizada();
-});
-</script>
+<?php while($row = $result->fetch_assoc()): ?>
+
+<tr>
+<td><?= $row['data'] ?></td>
+<td><?= substr($row['hora'],0,5) ?></td>
+
+<td>
+<?php if($row['marcacao_id']): ?>
+<span class="badge-no">OCUPADO</span>
+<?php else: ?>
+<span class="badge-ok">LIVRE</span>
+<?php endif; ?>
+</td>
+
+<td>
+<?php if($row['marcacao_id']): ?>
+<?= $row['nome'] ?>
+<?php else: ?>
+—
+<?php endif; ?>
+</td>
+
+<td>
+
+<a class="btn" href="?apagar=<?= $row['id'] ?>">Apagar</a>
+
+<?php if($row['marcacao_id']): ?>
+
+<?php
+$msg = urlencode("Olá {$row['nome']}, a sua marcação de {$row['servico']} foi desmarcada. Pode reagendar connosco.");
+$phone = "3519XXXXXXXX";
+?>
+
+<a class="btn" target="_blank"
+href="https://wa.me/<?= $phone ?>?text=<?= $msg ?>">
+WhatsApp
+</a>
+
+<?php endif; ?>
+
+</td>
+
+</tr>
+
+<?php endwhile; ?>
+
+</table>
+
+</div>
+
+</div>
 
 </body>
 </html>
