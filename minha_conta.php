@@ -3,7 +3,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+date_default_timezone_set('Europe/Lisbon');
+
 require_once('config/db.php');
+require_once(__DIR__ . '/includes/mail_helper.php');
 
 if (!isset($_SESSION['user'])) {
     header("Location: auth/login.php");
@@ -303,7 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_marcacao']))
 
     if ($marcacao_id > 0) {
         $stmtBuscarMarc = $conn->prepare("
-            SELECT id, data_marcacao, hora
+            SELECT id, data_marcacao, hora, servico
             FROM marcacoes
             WHERE id = ? AND user_id = ?
             LIMIT 1
@@ -326,6 +329,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_marcacao']))
 
                 if ($stmtCancel->execute()) {
                     $mensagem = "Marcação cancelada com sucesso.";
+
+                    $stmtUserEmail = $conn->prepare("SELECT nome, email FROM users WHERE id = ? LIMIT 1");
+                    $stmtUserEmail->bind_param("i", $user_id);
+                    $stmtUserEmail->execute();
+                    $userEmail = $stmtUserEmail->get_result()->fetch_assoc();
+                    $stmtUserEmail->close();
+
+                    enviarEmailCancelamentoMarcacao(
+                        $userEmail['email'],
+                        $userEmail['nome'],
+                        $marc['data_marcacao'],
+                        $marc['hora'],
+                        $marc['servico']
+                    );
+
                 } else {
                     $erro = "Erro ao cancelar a marcação.";
                 }
@@ -335,7 +353,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancelar_marcacao']))
         }
     }
 }
-
 /* =========================
    BUSCAR DADOS UTILIZADOR
 ========================= */
@@ -384,7 +401,8 @@ $stmtMarc = $conn->prepare("
     SELECT id, data_marcacao, hora, servico
     FROM marcacoes
     WHERE user_id = ?
-    ORDER BY data_marcacao DESC, hora DESC
+    AND CONCAT(data_marcacao, ' ', hora) >= NOW()
+    ORDER BY data_marcacao ASC, hora ASC
 ");
 $stmtMarc->bind_param("i", $user_id);
 $stmtMarc->execute();

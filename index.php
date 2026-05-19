@@ -535,17 +535,14 @@ function recusarCookies() {
 }
 
 window.onload = function() {
-
     const escolha = localStorage.getItem("cookiesEscolha");
+    const banner = document.getElementById("cookie-banner");
+    if (!banner) return;
 
     if (escolha === "aceite" || escolha === "recusado") {
-
-        const banner = document.getElementById("cookie-banner");
-
-        if (banner) {
-
-            banner.style.display = "none";
-        }
+        banner.style.display = "none";
+    } else {
+        banner.style.display = "flex";
     }
 };
 </script>
