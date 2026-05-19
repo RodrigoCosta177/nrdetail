@@ -296,21 +296,10 @@ $produtosDestaque = $conn->query("
         }
 
         @media (max-width: 768px) {
-            .hero-content h1 {
-                font-size: 2.3rem;
-            }
-
-            .hero-content p {
-                font-size: 1rem;
-            }
-
-            .secao {
-                padding: 55px 5%;
-            }
-
-            .cards-grid {
-                grid-template-columns: 1fr;
-            }
+            .hero-content h1 { font-size: 2.3rem; }
+            .hero-content p  { font-size: 1rem; }
+            .secao           { padding: 55px 5%; }
+            .cards-grid      { grid-template-columns: 1fr; }
         }
 </style>
 </head>
@@ -350,13 +339,11 @@ $produtosDestaque = $conn->query("
             <p>Agenda lavagens e serviços automóveis de forma rápida, simples e organizada.</p>
             <a href="<?= $root ?>/marcar.php" class="card-btn">Marcar Agora</a>
         </div>
-
         <div class="servico-card">
             <h3>Stand</h3>
             <p>Descobre viaturas em destaque com página individual, galeria e informação detalhada.</p>
             <a href="<?= $root ?>/stand.php" class="card-btn">Ver Viaturas</a>
         </div>
-
         <div class="servico-card">
             <h3>Loja</h3>
             <p>Explora produtos disponíveis, adiciona ao carrinho e conclui a tua encomenda.</p>
@@ -376,7 +363,6 @@ $produtosDestaque = $conn->query("
                     <div class="card-img">
                         <img src="<?= $root ?>/uploads/carros/<?= htmlspecialchars($carro['imagem_principal']) ?>" alt="<?= htmlspecialchars($carro['marca'] . ' ' . $carro['modelo']) ?>">
                     </div>
-
                     <div class="card-info">
                         <h3><?= htmlspecialchars($carro['marca'] . ' ' . $carro['modelo']) ?></h3>
                         <p><strong>Ano:</strong> <?= (int)$carro['ano'] ?></p>
@@ -403,7 +389,6 @@ $produtosDestaque = $conn->query("
                     <div class="card-img">
                         <img src="<?= $root ?>/uploads/produtos/<?= htmlspecialchars($produto['imagem']) ?>" alt="<?= htmlspecialchars($produto['nome']) ?>">
                     </div>
-
                     <div class="card-info">
                         <h3><?= htmlspecialchars($produto['nome']) ?></h3>
                         <p><strong>Categoria:</strong> <?= htmlspecialchars($produto['categoria']) ?></p>
@@ -429,7 +414,6 @@ $produtosDestaque = $conn->query("
 <section class="secao cta-final">
     <h2>Pronto para avançar?</h2>
     <p>Marca um serviço, descobre os nossos carros ou explora os produtos disponíveis.</p>
-
     <div class="hero-buttons">
         <a href="<?= $root ?>/marcar.php" class="btn-principal">Marcar Serviço</a>
         <a href="<?= $root ?>/stand.php" class="btn-secundario">Ver Stand</a>
@@ -472,13 +456,59 @@ $produtosDestaque = $conn->query("
 
 </div>
 
+<style>
+#cookie-banner {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 99999;
+    background: rgba(18, 18, 18, 0.94);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 204, 0, 0.18);
+    border-radius: 16px;
+    padding: 14px 18px;
+    display: none;
+    align-items: center;
+    gap: 18px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    max-width: 520px;
+    width: calc(100% - 40px);
+    animation: cbSlideUp 0.4s cubic-bezier(0.22,1,0.36,1) both;
+    font-family: 'Segoe UI', sans-serif;
+}
+@keyframes cbSlideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.cb-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.cb-icon { font-size: 22px; flex-shrink: 0; }
+.cb-text strong { display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.cb-text p { font-size: 12px; color: rgba(255,255,255,0.45); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-text p a { color: #ffcc00; text-decoration: none; font-weight: 600; }
+.cb-text p a:hover { text-decoration: underline; }
+.cb-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.cb-btn { height: 36px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s ease; font-family: inherit; white-space: nowrap; }
+.cb-rejeitar { background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.12); }
+.cb-rejeitar:hover { background: rgba(255,255,255,0.13); color: #fff; }
+.cb-aceitar { background: #ffcc00; color: #111; }
+.cb-aceitar:hover { background: #ffe033; box-shadow: 0 4px 14px rgba(255,204,0,0.35); }
+@media (max-width: 480px) {
+    #cookie-banner { flex-direction: column; align-items: flex-start; gap: 12px; bottom: 16px; padding: 16px; }
+    .cb-text p { white-space: normal; }
+    .cb-actions { width: 100%; }
+    .cb-btn { flex: 1; text-align: center; }
+}
+</style>
+
 <script>
+/* ── Carousel ── */
 const heroImages = document.querySelectorAll('.hero-carousel img');
 let currentHero = 0;
 
 if (heroImages.length > 0) {
     heroImages[currentHero].classList.add('active');
-
     setInterval(() => {
         heroImages[currentHero].classList.remove('active');
         currentHero = (currentHero + 1) % heroImages.length;

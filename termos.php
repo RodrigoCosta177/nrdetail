@@ -79,11 +79,13 @@ body {
 </head>
 <body>
 
-<?php include('includes/header.php'); ?>
+<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/header.php'); ?>
 
 <section class="pagina-legal">
 
     <h1>Termos e Condições</h1>
+    <p>Última atualização: <?= date('d/m/Y') ?></p>
+</div>
 
     <p class="data-atualizacao">Última atualização: Maio de 2026</p>
 
@@ -101,7 +103,30 @@ body {
 
 </section>
 
-<?php include('includes/footer.php'); ?>
+    <div class="legal-section">
+        <h2><span class="num">5</span> Responsabilidade</h2>
+        <p>A NR Detail Car & Care não se responsabiliza por interrupções temporárias do serviço, erros técnicos alheios à sua vontade, ou danos causados por uso indevido do website por parte do utilizador.</p>
+    </div>
+
+    <div class="legal-section">
+        <h2><span class="num">6</span> Privacidade</h2>
+        <p>Os dados pessoais recolhidos são tratados de acordo com a nossa <a href="/nrdetail/privacidade.php" style="color:#ffcc00;text-decoration:none;font-weight:600;">Política de Privacidade</a> e em conformidade com o RGPD. Não partilhamos dados com terceiros sem o teu consentimento.</p>
+    </div>
+
+    <div class="legal-section">
+        <h2><span class="num">7</span> Alterações</h2>
+        <p>Reservamo-nos o direito de alterar os presentes Termos e Condições sempre que necessário. As alterações entram em vigor imediatamente após publicação no website. Recomendamos a consulta periódica desta página.</p>
+    </div>
+
+    <div class="legal-section">
+        <h2><span class="num">8</span> Contacto</h2>
+        <p>Para esclarecimentos sobre estes Termos e Condições, podes contactar-nos através da página de <a href="/nrdetail/contactos.php" style="color:#ffcc00;text-decoration:none;font-weight:600;">contactos</a>.</p>
+    </div>
+
+    <p class="legal-footer">© <?= date("Y") ?> NR Detail Car & Care — Todos os direitos reservados</p>
+</div>
+
+<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/footer.php'); ?>
 
 </body>
 </html>

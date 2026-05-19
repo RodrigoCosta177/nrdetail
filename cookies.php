@@ -79,11 +79,13 @@ body {
 </head>
 <body>
 
-<?php include('includes/header.php'); ?>
+<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/header.php'); ?>
 
 <section class="pagina-legal">
 
     <h1>Política de Cookies</h1>
+    <p>Última atualização: <?= date('d/m/Y') ?></p>
+</div>
 
     <p class="data-atualizacao">Última atualização: Maio de 2026</p>
 
@@ -103,7 +105,15 @@ body {
 
 </section>
 
-<?php include('includes/footer.php'); ?>
+    <div class="legal-section">
+        <h2><span class="num">4</span> Contacto</h2>
+        <p>Para qualquer questão relacionada com cookies, contacta-nos através da página de <a href="/nrdetail/contactos.php" style="color:#ffcc00;text-decoration:none;font-weight:600;">contactos</a>.</p>
+    </div>
+
+    <p class="legal-footer">© <?= date("Y") ?> NR Detail Car & Care — Todos os direitos reservados</p>
+</div>
+
+<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/footer.php'); ?>
 
 </body>
 </html>
