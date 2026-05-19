@@ -30,7 +30,7 @@ $produtosDestaque = $conn->query("
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="<?= $root ?>/css/style.css">
 
-    <style>
+  <style>
         body {
             background: #111;
             color: white;
@@ -192,12 +192,15 @@ $produtosDestaque = $conn->query("
             overflow: hidden;
             box-shadow: 0 0 18px rgba(255,204,0,0.08);
             transition: 0.3s;
+            display: flex;
+            flex-direction: column;
         }
 
         .card-item:hover {
             transform: translateY(-6px);
         }
 
+        /* ===== FIX PRINCIPAL (IMAGENS) ===== */
         .card-img {
             width: 100%;
             aspect-ratio: 16 / 10;
@@ -211,7 +214,7 @@ $produtosDestaque = $conn->query("
         .card-img img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* <-- FIX: era contain e estava a estragar tudo */
             object-position: center;
             display: block;
         }
@@ -220,7 +223,7 @@ $produtosDestaque = $conn->query("
             padding: 18px;
             display: flex;
             flex-direction: column;
-            min-height: 220px;
+            flex: 1;
         }
 
         .card-info h3 {
@@ -309,7 +312,7 @@ $produtosDestaque = $conn->query("
                 grid-template-columns: 1fr;
             }
         }
-    </style>
+</style>
 </head>
 
 <body>
@@ -436,12 +439,37 @@ $produtosDestaque = $conn->query("
 <?php include($_SERVER['DOCUMENT_ROOT'] . $root . '/includes/footer.php'); ?>
 
 <div id="cookie-banner" class="cookie-banner">
-    <p>
-        Este site utiliza cookies para melhorar a experiência do utilizador.
-        Ao continuar a navegar está a concordar com a nossa
-        <a href="<?= $root ?>/privacidade.php">Política de Privacidade</a>.
-    </p>
-    <button onclick="aceitarCookies()">Aceitar</button>
+
+    <div class="cookie-content">
+
+        <div class="cookie-texto">
+            <h3>Utilização de Cookies</h3>
+
+            <p>
+                Este website utiliza cookies para melhorar a experiência de navegação,
+                garantir funcionalidades essenciais e otimizar o desempenho da plataforma.
+                Ao continuar a navegar, concorda com a utilização de cookies.
+            </p>
+
+            <a href="<?= $root ?>/privacidade.php">
+                Ler Política de Privacidade
+            </a>
+        </div>
+
+        <div class="cookie-actions">
+
+            <button class="cookie-btn cookie-recusar" onclick="recusarCookies()">
+                Recusar
+            </button>
+
+            <button class="cookie-btn cookie-aceitar" onclick="aceitarCookies()">
+                Aceitar
+            </button>
+
+        </div>
+
+    </div>
+
 </div>
 
 <script>
@@ -458,15 +486,34 @@ if (heroImages.length > 0) {
     }, 4000);
 }
 
+/* =========================
+   COOKIES
+========================= */
+
 function aceitarCookies() {
-    localStorage.setItem("cookiesAceites", "sim");
+
+    localStorage.setItem("cookiesEscolha", "aceite");
+
+    document.getElementById("cookie-banner").style.display = "none";
+}
+
+function recusarCookies() {
+
+    localStorage.setItem("cookiesEscolha", "recusado");
+
     document.getElementById("cookie-banner").style.display = "none";
 }
 
 window.onload = function() {
-    if (localStorage.getItem("cookiesAceites") === "sim") {
+
+    const escolha = localStorage.getItem("cookiesEscolha");
+
+    if (escolha === "aceite" || escolha === "recusado") {
+
         const banner = document.getElementById("cookie-banner");
+
         if (banner) {
+
             banner.style.display = "none";
         }
     }

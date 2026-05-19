@@ -391,6 +391,120 @@ $linkWhatsapp = "https://wa.me/" . $numeroWhatsapp . "?text=" . urlencode($mensa
                 grid-template-columns: repeat(3, 1fr);
             }
         }
+
+        /* =========================
+   MODAL FULLSCREEN
+========================= */
+
+.modal-imagem {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.96);
+    justify-content: center;
+    align-items: center;
+    animation: fadeModal 0.25s ease;
+}
+
+@keyframes fadeModal {
+
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-conteudo {
+    max-width: 92%;
+    max-height: 88%;
+    object-fit: contain;
+    border-radius: 16px;
+    cursor: zoom-in;
+    transition: transform 0.3s ease;
+    box-shadow: 0 0 35px rgba(255, 204, 0, 0.15);
+}
+
+.modal-conteudo.zoom {
+    transform: scale(1.6);
+    cursor: zoom-out;
+}
+
+.fechar-modal {
+    position: absolute;
+    top: 18px;
+    right: 35px;
+    color: white;
+    font-size: 42px;
+    cursor: pointer;
+    z-index: 100000;
+    transition: 0.3s;
+}
+
+.fechar-modal:hover {
+    color: #ffcc00;
+    transform: scale(1.08);
+}
+
+.modal-seta {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 58px;
+    height: 58px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    transition: 0.3s;
+    backdrop-filter: blur(5px);
+}
+
+.modal-seta:hover {
+    background: #ffcc00;
+    color: black;
+    transform: translateY(-50%) scale(1.08);
+}
+
+.modal-esquerda {
+    left: 25px;
+}
+
+.modal-direita {
+    right: 25px;
+}
+
+.imagem-principal-wrap img {
+    cursor: zoom-in;
+}
+
+.imagem-principal-wrap img:hover {
+    transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+
+    .modal-seta {
+        width: 46px;
+        height: 46px;
+        font-size: 22px;
+    }
+
+    .fechar-modal {
+        top: 12px;
+        right: 22px;
+        font-size: 34px;
+    }
+
+    .modal-conteudo.zoom {
+        transform: scale(1.25);
+    }
+}
     </style>
 </head>
 <body>
@@ -431,10 +545,12 @@ include('includes/header.php');
 
                 <!-- Imagem principal mostrada no ecrã -->
                 <img
-                    id="imagemPrincipal"
-                    src="/nrdetail/uploads/carros/<?= htmlspecialchars($imagens[0]) ?>"
-                    alt="<?= htmlspecialchars($carro['marca'] . ' ' . $carro['modelo']) ?>"
-                >
+                id="imagemPrincipal"
+                src="/nrdetail/uploads/carros/<?= htmlspecialchars($imagens[0]) ?>"
+                alt="<?= htmlspecialchars($carro['marca'] . ' ' . $carro['modelo']) ?>"
+                onclick="abrirModal()"
+                loading="lazy"
+>
             </div>
 
             <!-- Miniaturas -->
@@ -514,6 +630,28 @@ include('includes/header.php');
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- MODAL FULLSCREEN -->
+<div id="modalImagem" class="modal-imagem">
+
+    <span class="fechar-modal" onclick="fecharModal()">&times;</span>
+
+    <?php if (count($imagens) > 1): ?>
+        <button class="modal-seta modal-esquerda" onclick="imagemAnteriorModal()">‹</button>
+    <?php endif; ?>
+
+    <img
+        id="imagemModalConteudo"
+        class="modal-conteudo"
+        src=""
+        alt="Imagem do carro"
+    >
+
+    <?php if (count($imagens) > 1): ?>
+        <button class="modal-seta modal-direita" onclick="imagemSeguinteModal()">›</button>
+    <?php endif; ?>
+
+</div>
     
 </section>
 
@@ -576,6 +714,85 @@ include('includes/header.php');
             imagemSeguinte();
         }
     });
+
+    /* =========================
+   MODAL FULLSCREEN
+========================= */
+
+const modalImagem = document.getElementById('modalImagem');
+const imagemModalConteudo = document.getElementById('imagemModalConteudo');
+
+/* Abrir modal */
+function abrirModal() {
+
+    imagemModalConteudo.src = imagens[indiceAtual];
+
+    modalImagem.style.display = 'flex';
+
+    document.body.style.overflow = 'hidden';
+}
+
+/* Fechar modal */
+function fecharModal() {
+
+    modalImagem.style.display = 'none';
+
+    imagemModalConteudo.classList.remove('zoom');
+
+    document.body.style.overflow = 'auto';
+}
+
+/* Zoom */
+imagemModalConteudo.addEventListener('click', function () {
+
+    imagemModalConteudo.classList.toggle('zoom');
+});
+
+/* Navegação modal */
+function imagemAnteriorModal() {
+
+    imagemAnterior();
+
+    imagemModalConteudo.src = imagens[indiceAtual];
+}
+
+function imagemSeguinteModal() {
+
+    imagemSeguinte();
+
+    imagemModalConteudo.src = imagens[indiceAtual];
+}
+
+/* Clicar fora fecha */
+modalImagem.addEventListener('click', function(e) {
+
+    if (e.target === modalImagem) {
+
+        fecharModal();
+    }
+});
+
+/* ESC + setas */
+document.addEventListener('keydown', function(e) {
+
+    if (modalImagem.style.display === 'flex') {
+
+        if (e.key === 'Escape') {
+
+            fecharModal();
+        }
+
+        if (e.key === 'ArrowLeft') {
+
+            imagemAnteriorModal();
+        }
+
+        if (e.key === 'ArrowRight') {
+
+            imagemSeguinteModal();
+        }
+    }
+});
 </script>
 
 </body>

@@ -56,160 +56,161 @@ $stmt->close();
     <meta charset="UTF-8">
     <title>Produtos - NR Detail</title>
     <link rel="stylesheet" href="/nrdetail/css/style.css">
-    <style>
-        .mensagem-sucesso,
-        .mensagem-erro {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-        }
 
-        .mensagem-sucesso {
-            background: #1f4d2e;
-            color: #d4ffd4;
-        }
+<style>
 
-        .mensagem-erro {
-            background: #5a1f1f;
-            color: #ffd4d4;
-        }
 
-        .produto-card form {
-            margin-top: 12px;
-        }
+.produtos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
+    gap: 24px;
+    justify-content: center;
+    align-items: stretch;
+}
 
-        .produto-card button {
-            background: #ffcc00;
-            color: #000;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.2s;
-        }
+.produto-card {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    background: #1c1c1c;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 18px rgba(255,204,0,0.08);
+    transition: 0.3s;
+}
 
-        .produto-card button:hover {
-            background: #e6b800;
-        }
+.produto-card:hover {
+    transform: translateY(-5px);
+}
 
-        .filtros-form {
-            max-width: 1200px;
-            margin: 25px auto 10px;
-            background: #1a1a1a;
-            border: 1px solid #2b2b2b;
-            border-radius: 14px;
-            padding: 18px;
-        }
 
-        .filtros-form h3 {
-            color: #ffcc00;
-            margin-bottom: 14px;
-            font-size: 20px;
-        }
+.produto-card img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: contain;
+    background: #111;
+    padding: 10px;
+    display: block;
+}
 
-        .filtros-opcoes {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
+/* =========================
+   TEXTO
+========================= */
+.produto-card h3 {
+    color: #ffffff;
+    font-size: 1.1rem;
+    margin: 10px;
+}
 
-        .filtro-item {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: #111;
-            border: 1px solid #333;
-            border-radius: 10px;
-            padding: 10px 14px;
-            color: white;
-        }
+.produto-card .preco {
+    color: #ffcc00;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
 
-        .filtro-item input[type="checkbox"] {
-            accent-color: #ffcc00;
-            width: 16px;
-            height: 16px;
-        }
+/* =========================
+   BOTÃO
+========================= */
+.produto-card form {
+    margin-top: 12px;
+}
 
-        .filtros-botoes {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+.produto-card button {
+    background: #ffcc00;
+    color: #000;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+    margin: 10px;
+}
 
-        .btn-filtro,
-        .btn-limpar {
-            border: none;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.25s ease;
-            text-decoration: none;
-            display: inline-block;
-        }
+.produto-card button:hover {
+    background: #e6b800;
+}
 
-        .btn-filtro {
-            background: #ffcc00;
-            color: black;
-        }
 
-        .btn-filtro:hover {
-            background: #e6b800;
-        }
+.filtros-form {
+    max-width: 1200px;
+    margin: 25px auto 10px;
+    background: #1a1a1a;
+    border: 1px solid #2b2b2b;
+    border-radius: 14px;
+    padding: 18px;
+}
 
-        .btn-limpar {
-            background: #2a2a2a;
-            color: white;
-        }
+.filtros-form h3 {
+    color: #ffcc00;
+    margin-bottom: 14px;
+    font-size: 20px;
+}
 
-        .btn-limpar:hover {
-            background: #3a3a3a;
-        }
+.filtros-opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
 
-        .resultado-filtros {
-            max-width: 1200px;
-            margin: 0 auto 20px;
-            color: #bbb;
-        }
+.filtro-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: white;
+}
 
-        @media (max-width: 768px) {
-            .filtros-opcoes {
-                flex-direction: column;
-            }
+.filtro-item input[type="checkbox"] {
+    accent-color: #ffcc00;
+}
 
-            .filtros-botoes {
-                flex-direction: column;
-            }
+.filtros-botoes {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
 
-            .btn-filtro,
-            .btn-limpar {
-                width: 100%;
-                text-align: center;
-            }
-        }
-    </style>
+.btn-filtro {
+    background: #ffcc00;
+    color: black;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.btn-limpar {
+    background: #2a2a2a;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+}
+
+.resultado-filtros {
+    max-width: 1200px;
+    margin: 0 auto 20px;
+    color: #bbb;
+}
+
+
+@media (max-width: 768px) {
+    .produtos-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
 </head>
+
 <body>
 
 <?php include('includes/header.php'); ?>
-
-<?php if (!empty($_SESSION['mensagem_sucesso'])): ?>
-    <div class="mensagem-sucesso">
-        <?= htmlspecialchars($_SESSION['mensagem_sucesso']) ?>
-    </div>
-    <?php unset($_SESSION['mensagem_sucesso']); ?>
-<?php endif; ?>
-
-<?php if (!empty($_SESSION['mensagem_erro'])): ?>
-    <div class="mensagem-erro">
-        <?= htmlspecialchars($_SESSION['mensagem_erro']) ?>
-    </div>
-    <?php unset($_SESSION['mensagem_erro']); ?>
-<?php endif; ?>
 
 <section class="produtos-page">
     <h1>Nossos Produtos</h1>
@@ -251,100 +252,45 @@ $stmt->close();
 
     <div class="resultado-filtros">
         <?php if (!empty($categorias_selecionadas)): ?>
-            <p>
-                Filtros ativos:
-                <strong><?= htmlspecialchars(implode(', ', $categorias_selecionadas)) ?></strong>
-            </p>
+            <p>Filtros ativos: <strong><?= htmlspecialchars(implode(', ', $categorias_selecionadas)) ?></strong></p>
         <?php else: ?>
             <p>A mostrar todos os produtos.</p>
         <?php endif; ?>
     </div>
 
     <div class="produtos-grid">
+
         <?php if (!empty($produtos)): ?>
             <?php foreach ($produtos as $produto): ?>
                 <div class="produto-card">
-                    <img
-                        src="/nrdetail/imagens/produtos/<?= htmlspecialchars($produto['imagem']) ?>"
-                        alt="<?= htmlspecialchars($produto['nome']) ?>"
-                    >
+
+                    <img src="/nrdetail/imagens/produtos/<?= htmlspecialchars($produto['imagem']) ?>"
+                         alt="<?= htmlspecialchars($produto['nome']) ?>">
 
                     <h3><?= htmlspecialchars($produto['nome']) ?></h3>
-                    <p class="preco"><?= number_format((float)$produto['preco'], 2, ',', '.') ?>€</p>
 
-                                <form class="form-add-carrinho" action="adicionar_carrinho.php" method="post">
-                    <input type="hidden" name="produto_id" value="<?= (int)$produto['id'] ?>">
-                    <input type="hidden" name="ajax" value="1">
-                    <button type="submit" class="btn-add-cart">Adicionar ao Carrinho</button>
-                </form>
+                    <p class="preco">
+                        <?= number_format((float)$produto['preco'], 2, ',', '.') ?>€
+                    </p>
+
+                    <form action="adicionar_carrinho.php" method="post">
+                        <input type="hidden" name="produto_id" value="<?= (int)$produto['id'] ?>">
+                        <input type="hidden" name="ajax" value="1">
+                        <button type="submit">Adicionar ao Carrinho</button>
+                    </form>
+
                 </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p>Não existem produtos disponíveis para os filtros selecionados.</p>
+            <p style="color:#bbb; text-align:center;">
+                Não existem produtos para os filtros selecionados.
+            </p>
         <?php endif; ?>
+
     </div>
 </section>
 
-<footer class="footer">
-    <div class="footer-container">
-        <div class="footer-logo">
-            <img src="imagens/logo.png" alt="NR Detail Logo">
-        </div>
-
-        <div class="footer-links">
-            <a href="privacidade.php">Política de Privacidade</a>
-            <a href="termos.php">Termos e Condições</a>
-            <a href="cookies.php">Política de Cookies</a>
-        </div>
-
-        <div class="footer-copy">
-            <p>© <?php echo date("Y"); ?> NR Detail Car & Care - Todos os direitos reservados</p>
-        </div>
-    </div>
-</footer>
-
-<script>
-document.querySelectorAll('.form-add-carrinho').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const botao = this.querySelector('.btn-add-cart');
-        const formData = new FormData(this);
-
-        botao.disabled = true;
-        const textoOriginal = botao.innerText;
-        botao.innerText = 'A adicionar...';
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'ok') {
-    if (typeof atualizarMiniCarrinhoUI === 'function') {
-        atualizarMiniCarrinhoUI();
-    }
-
-    if (typeof abrirMiniCarrinho === 'function') {
-        abrirMiniCarrinho();
-    }
-
-    if (typeof animarMiniCarrinho === 'function') {
-        animarMiniCarrinho();
-    }
-}
-        })
-        .catch(() => {
-            alert('Erro ao comunicar com o servidor.');
-        })
-        .finally(() => {
-            botao.disabled = false;
-            botao.innerText = textoOriginal;
-        });
-    });
-});
-</script>
+<?php include('includes/footer.php'); ?>
 
 </body>
 </html>

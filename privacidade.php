@@ -10,31 +10,104 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <title>Política de Privacidade - NR Detail</title>
     <link rel="stylesheet" href="css/style.css">
+
+<style>
+
+body {
+    background: #111;
+    color: #ddd;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.pagina-legal {
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 70px 7%;
+}
+
+.pagina-legal h1 {
+    color: #ffcc00;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.data-atualizacao {
+    color: #999;
+    margin-bottom: 40px;
+    font-size: 14px;
+}
+
+.pagina-legal h2 {
+    color: #ffcc00;
+    margin-top: 38px;
+    margin-bottom: 12px;
+    font-size: 1.35rem;
+}
+
+.pagina-legal p,
+.pagina-legal li {
+    line-height: 1.9;
+    color: #ddd;
+    font-size: 15px;
+    margin-bottom: 14px;
+}
+
+.pagina-legal ul {
+    padding-left: 22px;
+}
+
+.pagina-legal a {
+    color: #ffcc00;
+    text-decoration: none;
+}
+
+.pagina-legal a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .pagina-legal {
+        padding: 50px 6%;
+    }
+
+    .pagina-legal h1 {
+        font-size: 2rem;
+    }
+}
+
+</style>
 </head>
 <body>
 
 <?php include('includes/header.php'); ?>
 
-<section style="max-width:900px;margin:80px auto;padding:20px;">
+<section class="pagina-legal">
+
     <h1>Política de Privacidade</h1>
-    <p>A NR Detail Car & Care respeita a privacidade dos seus utilizadores e compromete-se a proteger os dados pessoais fornecidos.</p>
 
-    <h2>1. Recolha de Dados</h2>
-    <p>Recolhemos apenas os dados necessários para gestão de encomendas, pedidos de contacto e prestação de serviços.</p>
+    <p class="data-atualizacao">Última atualização: Maio de 2026</p>
 
-    <h2>2. Finalidade</h2>
-    <p>Os dados recolhidos são utilizados exclusivamente para processamento de encomendas, comunicação com clientes e melhoria dos nossos serviços.</p>
+    <p>A NR Detail Car & Care compromete-se a proteger a privacidade dos utilizadores e os seus dados pessoais.</p>
 
-    <h2>3. Proteção de Dados</h2>
-    <p>Implementamos medidas técnicas e organizativas adequadas para proteger os dados pessoais contra acesso não autorizado, alteração ou destruição.</p>
+    <h2>Recolha de Dados</h2>
+    <p>Recolhemos apenas os dados necessários para funcionamento da plataforma.</p>
 
-    <h2>4. Partilha de Dados</h2>
-    <p>Não partilhamos dados pessoais com terceiros, exceto quando exigido por lei.</p>
+    <ul>
+        <li>Nome</li>
+        <li>Email</li>
+        <li>Telefone</li>
+        <li>Marcações e encomendas</li>
+    </ul>
 
-    <h2>5. Direitos do Utilizador</h2>
-    <p>Nos termos do RGPD, o utilizador tem direito de acesso, retificação ou eliminação dos seus dados pessoais.</p>
+    <h2>Finalidade</h2>
+    <p>Os dados são usados para gestão de serviços, encomendas e comunicação com clientes.</p>
 
-    <p>Para qualquer questão relacionada com a proteção de dados, poderá contactar-nos através dos meios disponibilizados na página de contactos.</p>
+    <h2>Proteção de Dados</h2>
+    <p>Aplicamos medidas de segurança para proteger os dados dos utilizadores.</p>
+
+    <h2>Direitos do Utilizador</h2>
+    <p>O utilizador pode solicitar acesso, alteração ou eliminação dos seus dados.</p>
+
 </section>
 
 <?php include('includes/footer.php'); ?>

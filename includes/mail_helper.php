@@ -240,3 +240,102 @@ function enviarEmailAtualizacaoEstadoEncomenda($emailCliente, $nomeCliente, $enc
         return 'ERRO MAIL ESTADO: ' . $mail->ErrorInfo;
     }
 }
+
+// Marcação confirmada
+
+
+function enviarEmailMarcacao($emailCliente, $nomeCliente, $data, $hora, $servico)
+{
+    try {
+        $mail = configurarMailer();
+
+        $mail->addAddress($emailCliente, $nomeCliente);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Marcação confirmada - NR DETAIL';
+
+        $mail->Body = '
+            <div style="font-family: Arial; background:#111; padding:30px; color:#fff;">
+                <div style="max-width:600px; margin:auto; background:#1c1c1c; padding:25px; border-radius:12px; border:1px solid #333;">
+                    
+                    <h2 style="color:#ffcc00;">Marcação Confirmada</h2>
+
+                    <p>Olá <strong>' . htmlspecialchars($nomeCliente) . '</strong>,</p>
+
+                    <p>A tua marcação foi registada com sucesso.</p>
+
+                    <p>
+                        <strong>Serviço:</strong> ' . htmlspecialchars($servico) . '<br>
+                        <strong>Data:</strong> ' . htmlspecialchars($data) . '<br>
+                        <strong>Hora:</strong> ' . htmlspecialchars($hora) . '
+                    </p>
+
+                    <p style="margin-top:20px;">
+                        Se precisares de alterar ou cancelar, contacta-nos.
+                    </p>
+
+                    <br>
+
+                    <p style="color:#aaa;">
+                        NR DETAIL Car & Care
+                    </p>
+
+                </div>
+            </div>
+        ';
+
+        $mail->AltBody =
+            "Marcação confirmada\nServiço: $servico\nData: $data\nHora: $hora";
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        return 'ERRO EMAIL MARCAÇÃO: ' . $mail->ErrorInfo;
+    }
+}
+
+//Marcação Cancelada
+
+function enviarEmailCancelamentoMarcacao($emailCliente, $nomeCliente, $data, $hora, $servico)
+{
+    try {
+        $mail = configurarMailer();
+
+        $mail->addAddress($emailCliente, $nomeCliente);
+
+        $mail->isHTML(true);
+        $mail->Subject = 'Marcação cancelada - NR DETAIL';
+
+        $mail->Body = '
+            <div style="font-family: Arial; background:#111; padding:20px; color:#fff;">
+                <div style="max-width:600px; margin:auto; background:#1c1c1c; padding:20px; border-radius:12px;">
+                    <h2 style="color:#ffcc00;">Marcação cancelada</h2>
+
+                    <p>Olá, ' . htmlspecialchars($nomeCliente) . '</p>
+
+                    <p>A tua marcação foi cancelada:</p>
+
+                    <p>
+                        <strong>Data:</strong> ' . htmlspecialchars($data) . '<br>
+                        <strong>Hora:</strong> ' . htmlspecialchars($hora) . '<br>
+                        <strong>Serviço:</strong> ' . htmlspecialchars($servico) . '
+                    </p>
+
+                    <p style="margin-top:20px;">Se foi um erro, podes voltar a marcar no site.</p>
+
+                    <p style="color:#aaa;">NR DETAIL</p>
+                </div>
+            </div>
+        ';
+
+        $mail->AltBody =
+            "Marcação cancelada: $data às $hora ($servico)";
+
+        $mail->send();
+        return true;
+
+    } catch (Exception $e) {
+        return 'ERRO MAIL CANCELAMENTO: ' . $mail->ErrorInfo;
+    }
+}

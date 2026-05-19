@@ -10,28 +10,95 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <title>Termos e Condições - NR Detail</title>
     <link rel="stylesheet" href="css/style.css">
+
+<style>
+
+body {
+    background: #111;
+    color: #ddd;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.pagina-legal {
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 70px 7%;
+}
+
+.pagina-legal h1 {
+    color: #ffcc00;
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+}
+
+.data-atualizacao {
+    color: #999;
+    margin-bottom: 40px;
+    font-size: 14px;
+}
+
+.pagina-legal h2 {
+    color: #ffcc00;
+    margin-top: 38px;
+    margin-bottom: 12px;
+    font-size: 1.35rem;
+}
+
+.pagina-legal p,
+.pagina-legal li {
+    line-height: 1.9;
+    color: #ddd;
+    font-size: 15px;
+    margin-bottom: 14px;
+}
+
+.pagina-legal ul {
+    padding-left: 22px;
+}
+
+.pagina-legal a {
+    color: #ffcc00;
+    text-decoration: none;
+}
+
+.pagina-legal a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .pagina-legal {
+        padding: 50px 6%;
+    }
+
+    .pagina-legal h1 {
+        font-size: 2rem;
+    }
+}
+
+</style>
 </head>
 <body>
 
 <?php include('includes/header.php'); ?>
 
-<section style="max-width:900px;margin:80px auto;padding:20px;">
+<section class="pagina-legal">
+
     <h1>Termos e Condições</h1>
 
-    <h2>1. Objeto</h2>
-    <p>Os presentes Termos e Condições regulam a utilização do website da NR Detail Car & Care e a compra de produtos disponibilizados online.</p>
+    <p class="data-atualizacao">Última atualização: Maio de 2026</p>
 
-    <h2>2. Encomendas</h2>
-    <p>As encomendas realizadas através do website são processadas para levantamento presencial, com pagamento efetuado no momento da entrega.</p>
+    <h2>Objeto</h2>
+    <p>Regulamenta a utilização da plataforma NR Detail Car & Care.</p>
 
-    <h2>3. Preços</h2>
-    <p>Todos os preços apresentados incluem IVA à taxa legal em vigor.</p>
+    <h2>Utilização</h2>
+    <p>O utilizador deve usar a plataforma de forma responsável.</p>
 
-    <h2>4. Responsabilidade</h2>
-    <p>A NR Detail Car & Care não se responsabiliza por interrupções temporárias do serviço ou erros técnicos alheios à sua vontade.</p>
+    <h2>Encomendas</h2>
+    <p>As encomendas estão sujeitas à disponibilidade dos produtos.</p>
 
-    <h2>5. Alterações</h2>
-    <p>Reservamo-nos o direito de alterar os presentes Termos e Condições sempre que necessário.</p>
+    <h2>Responsabilidade</h2>
+    <p>Não nos responsabilizamos por falhas técnicas externas.</p>
+
 </section>
 
 <?php include('includes/footer.php'); ?>
