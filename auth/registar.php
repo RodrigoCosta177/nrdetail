@@ -515,7 +515,7 @@ function togglePass(inputId, iconId) {
     const icon  = document.getElementById(iconId);
     if (input.type === 'password') {
         input.type = 'text';
-        icon.textContent = '🙈';
+        icon.textContent = '🚫👁️';
     } else {
         input.type = 'password';
         icon.textContent = '👁';

@@ -6,127 +6,113 @@ if (session_status() === PHP_SESSION_NONE) {
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Termos e Condições - NR Detail</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/nrdetail/css/style.css">
 
 <style>
-
-body {
-    background: #111;
-    color: #ddd;
-    font-family: 'Segoe UI', sans-serif;
-}
-
-.pagina-legal {
-    max-width: 950px;
+.container {
+    max-width: 900px;
     margin: 0 auto;
-    padding: 70px 7%;
+    padding: 50px 20px;
+    color: #f5f5f5;
+    font-family: Arial, sans-serif;
+    line-height: 1.7;
 }
 
-.pagina-legal h1 {
+h1 {
+    text-align: center;
     color: #ffcc00;
-    font-size: 2.5rem;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
 }
 
-.data-atualizacao {
-    color: #999;
-    margin-bottom: 40px;
-    font-size: 14px;
-}
-
-.pagina-legal h2 {
+h2 {
+    margin-top: 25px;
     color: #ffcc00;
-    margin-top: 38px;
-    margin-bottom: 12px;
-    font-size: 1.35rem;
+    font-size: 1.2em;
 }
 
-.pagina-legal p,
-.pagina-legal li {
-    line-height: 1.9;
-    color: #ddd;
-    font-size: 15px;
-    margin-bottom: 14px;
+.box {
+    background: #1a1a1a;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid #2a2a2a;
 }
-
-.pagina-legal ul {
-    padding-left: 22px;
-}
-
-.pagina-legal a {
-    color: #ffcc00;
-    text-decoration: none;
-}
-
-.pagina-legal a:hover {
-    text-decoration: underline;
-}
-
-@media (max-width: 768px) {
-    .pagina-legal {
-        padding: 50px 6%;
-    }
-
-    .pagina-legal h1 {
-        font-size: 2rem;
-    }
-}
-
 </style>
 </head>
+
 <body>
 
-<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/header.php'); ?>
+<?php include($_SERVER['DOCUMENT_ROOT'].'/nrdetail/includes/header.php'); ?>
 
-<section class="pagina-legal">
+<div class="container">
 
     <h1>Termos e Condições</h1>
-    <p>Última atualização: <?= date('d/m/Y') ?></p>
+
+    <div class="box">
+        <p>
+            Ao utilizar o website da NR Detail Car & Care, o utilizador concorda com os presentes termos e condições.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>1. Utilização do Website</h2>
+        <p>
+            O utilizador compromete-se a utilizar este site apenas para fins legais e de forma responsável.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>2. Produtos e Serviços</h2>
+        <p>
+            Todos os produtos apresentados estão sujeitos a disponibilidade e podem ser alterados sem aviso prévio.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>3. Preços</h2>
+        <p>
+            Os preços podem ser atualizados a qualquer momento. O preço final será o apresentado no momento da compra.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>4. Encomendas</h2>
+        <p>
+            A confirmação de encomenda não garante aceitação automática. Reservamo-nos o direito de cancelar encomendas em caso de erro ou suspeita de fraude.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>5. Pagamentos</h2>
+        <p>
+            Os pagamentos devem ser efetuados através dos métodos disponíveis no site.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>6. Responsabilidade</h2>
+        <p>
+            Não nos responsabilizamos por danos resultantes de uso indevido dos produtos.
+        </p>
+    </div>
+
+    <div class="box">
+        <h2>7. Contacto</h2>
+        <p>
+            Email: papnrdetail29@gmail.com
+        </p>
+    </div>
+
+    <div class="box">
+        <p>Última atualização: <?= date("Y"); ?></p>
+    </div>
+
 </div>
 
-    <p class="data-atualizacao">Última atualização: Maio de 2026</p>
-
-    <h2>Objeto</h2>
-    <p>Regulamenta a utilização da plataforma NR Detail Car & Care.</p>
-
-    <h2>Utilização</h2>
-    <p>O utilizador deve usar a plataforma de forma responsável.</p>
-
-    <h2>Encomendas</h2>
-    <p>As encomendas estão sujeitas à disponibilidade dos produtos.</p>
-
-    <h2>Responsabilidade</h2>
-    <p>Não nos responsabilizamos por falhas técnicas externas.</p>
-
-</section>
-
-    <div class="legal-section">
-        <h2><span class="num">5</span> Responsabilidade</h2>
-        <p>A NR Detail Car & Care não se responsabiliza por interrupções temporárias do serviço, erros técnicos alheios à sua vontade, ou danos causados por uso indevido do website por parte do utilizador.</p>
-    </div>
-
-    <div class="legal-section">
-        <h2><span class="num">6</span> Privacidade</h2>
-        <p>Os dados pessoais recolhidos são tratados de acordo com a nossa <a href="/nrdetail/privacidade.php" style="color:#ffcc00;text-decoration:none;font-weight:600;">Política de Privacidade</a> e em conformidade com o RGPD. Não partilhamos dados com terceiros sem o teu consentimento.</p>
-    </div>
-
-    <div class="legal-section">
-        <h2><span class="num">7</span> Alterações</h2>
-        <p>Reservamo-nos o direito de alterar os presentes Termos e Condições sempre que necessário. As alterações entram em vigor imediatamente após publicação no website. Recomendamos a consulta periódica desta página.</p>
-    </div>
-
-    <div class="legal-section">
-        <h2><span class="num">8</span> Contacto</h2>
-        <p>Para esclarecimentos sobre estes Termos e Condições, podes contactar-nos através da página de <a href="/nrdetail/contactos.php" style="color:#ffcc00;text-decoration:none;font-weight:600;">contactos</a>.</p>
-    </div>
-
-    <p class="legal-footer">© <?= date("Y") ?> NR Detail Car & Care — Todos os direitos reservados</p>
-</div>
-
-<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/footer.php'); ?>
+<?php include($_SERVER['DOCUMENT_ROOT'].'/nrdetail/includes/footer.php'); ?>
 
 </body>
 </html>

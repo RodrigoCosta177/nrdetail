@@ -9,6 +9,7 @@ $contador_carrinho = 0;
 $nome_user = '';
 
 if (isset($_SESSION['user'])) {
+
     $user_id = $_SESSION['user']['id'];
     $nome_user = explode(' ', trim($_SESSION['user']['nome']))[0];
 
@@ -22,17 +23,24 @@ if (isset($_SESSION['user'])) {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
+
     $res = $stmt->get_result()->fetch_assoc();
+
     $contador_carrinho = (int)($res['total'] ?? 0);
+
     $stmt->close();
+
 } else {
+
     if (!empty($_SESSION['carrinho_guest']) && is_array($_SESSION['carrinho_guest'])) {
         $contador_carrinho = array_sum($_SESSION['carrinho_guest']);
     }
+
 }
 ?>
 
 <header>
+
     <div class="logo">
         <a href="index.php">
             <img src="imagens/logo.png" alt="NR Detail Logo">
@@ -42,6 +50,7 @@ if (isset($_SESSION['user'])) {
     <button id="menu-btn" aria-label="Abrir menu">☰</button>
 
     <nav id="menu">
+
         <a href="index.php">Início</a>
         <a href="produtos.php">Produtos</a>
         <a href="servicos.php">Serviços</a>
@@ -49,9 +58,12 @@ if (isset($_SESSION['user'])) {
         <a href="stand.php">Stand</a>
 
         <?php if (isset($_SESSION['user'])): ?>
+
             <a href="minha_conta.php">Meu Perfil</a>
 
-            <span class="user-nome">Olá, <?= htmlspecialchars($nome_user) ?></span>
+            <span class="user-nome">
+                Olá, <?= htmlspecialchars($nome_user) ?>
+            </span>
 
             <a href="carrinho.php" id="cart-toggle">
                 Carrinho 🛒 (<span id="contador"><?= $contador_carrinho ?></span>)
@@ -62,16 +74,23 @@ if (isset($_SESSION['user'])) {
             <?php endif; ?>
 
             <a href="auth/logout.php">Sair</a>
+
         <?php else: ?>
+
             <a href="carrinho.php" id="cart-toggle">
                 Carrinho 🛒 (<span id="contador"><?= $contador_carrinho ?></span>)
             </a>
+
             <a href="auth/login.php">Entrar</a>
+
         <?php endif; ?>
+
     </nav>
+
 </header>
 
 <style>
+
 header {
     background: var(--surface, #111);
     color: var(--text, #fff);
@@ -133,7 +152,6 @@ header nav a:hover {
     background: var(--accent-hover, #e6b800);
 }
 
-
 #menu-btn {
     display: none;
     font-size: 28px;
@@ -145,6 +163,7 @@ header nav a:hover {
 }
 
 @media (max-width: 768px) {
+
     header {
         flex-wrap: wrap;
         padding: 15px 20px;
@@ -165,16 +184,15 @@ header nav a:hover {
         padding-top: 10px;
     }
 
+    #menu.active {
+        display: flex;
+    }
+
     #menu a,
-    #menu .user-nome,
-    #menu .theme-toggle-header {
+    #menu .user-nome {
         margin: 10px 0;
         margin-left: 0;
         width: 100%;
-    }
-
-    #menu.active {
-        display: flex;
     }
 
     .admin-btn {
@@ -185,46 +203,46 @@ header nav a:hover {
     header .logo img {
         height: 48px;
     }
+
 }
+
 </style>
 
 <?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/mini_carrinho.php'); ?>
 
-</header>
-
-<?php include($_SERVER['DOCUMENT_ROOT'] . '/nrdetail/includes/mini_carrinho.php'); ?>
-
-<style>
-...
-</style>
-
 <script>
-... 
-</script>
 
-<script>
 document.addEventListener("DOMContentLoaded", function () {
+
     const menuBtn = document.getElementById("menu-btn");
     const menu = document.getElementById("menu");
     const cartToggle = document.getElementById("cart-toggle");
-    const btn = document.getElementById("theme-toggle");
 
+    // MENU MOBILE
     if (menuBtn && menu) {
+
         menuBtn.addEventListener("click", function () {
             menu.classList.toggle("active");
         });
+
     }
 
-
-
+    // ABRIR MINI CARRINHO
     if (cartToggle) {
-        cartToggle.addEventListener('click', function (e) {
+
+        cartToggle.addEventListener("click", function (e) {
+
             if (typeof abrirMiniCarrinho === 'function') {
+
                 e.preventDefault();
                 abrirMiniCarrinho();
+
             }
+
         });
+
     }
+
 });
 
 </script>

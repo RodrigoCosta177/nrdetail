@@ -17,7 +17,9 @@ if (empty($data) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $data)) {
     exit;
 }
 
-/* Bloquear datas passadas */
+/* =========================
+   BLOQUEAR DATAS PASSADAS
+========================= */
 if ($data < date('Y-m-d')) {
     echo json_encode([
         'status' => 'ok',
@@ -26,7 +28,9 @@ if ($data < date('Y-m-d')) {
     exit;
 }
 
-/* Bloquear fim de semana */
+/* =========================
+   BLOQUEAR FIM DE SEMANA
+========================= */
 $diaSemana = date('N', strtotime($data));
 if ($diaSemana >= 6) {
     echo json_encode([
@@ -36,7 +40,9 @@ if ($diaSemana >= 6) {
     exit;
 }
 
-/* Bloquear feriados */
+/* =========================
+   BLOQUEAR FERIADOS
+========================= */
 $stmtFeriado = $conn->prepare("SELECT id FROM feriados WHERE data = ? LIMIT 1");
 $stmtFeriado->bind_param("s", $data);
 $stmtFeriado->execute();
@@ -51,30 +57,48 @@ if ($feriado) {
     exit;
 }
 
-/* Buscar disponibilidade */
+/* =========================
+   BUSCAR DISPONIBILIDADE
+========================= */
 $stmt = $conn->prepare("
     SELECT d.hora, d.vagas,
            (
                SELECT COUNT(*)
                FROM marcacoes m
-               WHERE m.data_marcacao = d.data AND m.hora = d.hora
+               WHERE m.data_marcacao = d.data
+               AND m.hora = d.hora
            ) AS ocupadas
     FROM disponibilidade d
     WHERE d.data = ? AND d.ativo = 1
     ORDER BY d.hora ASC
 ");
+
 $stmt->bind_param("s", $data);
 $stmt->execute();
 $res = $stmt->get_result();
 
 $horariosDisponiveis = [];
 
+/* =========================
+   HORAS PASSADAS (CORREÇÃO PRINCIPAL)
+========================= */
+$hoje = date('Y-m-d');
+$agora = date('H:i:s');
+
 while ($row = $res->fetch_assoc()) {
+
+    $hora = $row['hora'];
+
+    // 🔥 BLOQUEIA HORAS PASSADAS NO DIA ATUAL
+    if ($data === $hoje && $hora <= $agora) {
+        continue;
+    }
+
     $vagas = (int)$row['vagas'];
     $ocupadas = (int)$row['ocupadas'];
 
     if ($ocupadas < $vagas) {
-        $horariosDisponiveis[] = substr($row['hora'], 0, 5);
+        $horariosDisponiveis[] = substr($hora, 0, 5);
     }
 }
 

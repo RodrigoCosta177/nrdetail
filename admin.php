@@ -28,12 +28,12 @@ $estado_classes = [
     'cancelada' => 'estado-cancelada'
 ];
 
-$transicoes_validas = [
-    'pendente' => ['processada', 'cancelada'],
-    'processada' => ['pronta_levantamento', 'cancelada'],
-    'pronta_levantamento' => ['concluida', 'cancelada'],
-    'concluida' => [],
-    'cancelada' => []
+$ordem_estados = [
+    'pendente' => 1,
+    'processada' => 2,
+    'pronta_levantamento' => 3,
+    'concluida' => 4,
+    'cancelada' => 999
 ];
 
 /* =========================
@@ -92,48 +92,80 @@ if (isset($_POST['limpar_concluidas'])) {
 }
 
 /* =========================
+   ATUALIZAR ESTADO ENCOMENDA   
+========================= */
+/* =========================
    ATUALIZAR ESTADO ENCOMENDA
 ========================= */
 if (isset($_POST['update_estado'])) {
+
     $id = isset($_POST['encomenda_id']) ? (int) $_POST['encomenda_id'] : 0;
     $novo_estado = isset($_POST['estado']) ? trim($_POST['estado']) : '';
 
-    if ($id > 0 && array_key_exists($novo_estado, $estado_labels)) {
-        $stmtAtual = $conn->prepare("
+    // estados válidos
+    $estados_validos = [
+        'pendente',
+        'processada',
+        'pronta_levantamento',
+        'concluida',
+        'cancelada'
+    ];
+
+    if ($id > 0 && in_array($novo_estado, $estados_validos, true)) {
+
+        // ir buscar estado atual + cliente
+        $stmt = $conn->prepare("
             SELECT e.estado, u.nome, u.email
             FROM encomendas e
-            INNER JOIN users u ON e.user_id = u.id
+            JOIN users u ON e.user_id = u.id
             WHERE e.id = ?
-            LIMIT 1
         ");
-        $stmtAtual->bind_param("i", $id);
-        $stmtAtual->execute();
-        $resAtual = $stmtAtual->get_result()->fetch_assoc();
-        $stmtAtual->close();
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $res = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
 
-        $estadoAtual = $resAtual['estado'] ?? '';
-        $nomeCliente = $resAtual['nome'] ?? '';
-        $emailCliente = $resAtual['email'] ?? '';
-
-        if (
-            $estadoAtual === $novo_estado ||
-            (isset($transicoes_validas[$estadoAtual]) && in_array($novo_estado, $transicoes_validas[$estadoAtual], true))
-        ) {
-            $stmt = $conn->prepare("UPDATE encomendas SET estado = ? WHERE id = ?");
-            $stmt->bind_param("si", $novo_estado, $id);
-            $stmt->execute();
-            $stmt->close();
-
-            if ($estadoAtual !== $novo_estado && !empty($emailCliente)) {
-                enviarEmailAtualizacaoEstadoEncomenda($emailCliente, $nomeCliente, $id, $novo_estado);
-            }
-
-            header("Location: admin.php?estado_atualizado=1");
-            exit;
-        } else {
+        if (!$res) {
             header("Location: admin.php?estado_invalido=1");
             exit;
         }
+
+        $estadoAtual = $res['estado'];
+        $nomeCliente = $res['nome'];
+        $emailCliente = $res['email'];
+
+        // ❗ BLOQUEIO: não deixar voltar atrás
+        $ordem = [
+            'pendente' => 1,
+            'processada' => 2,
+            'pronta_levantamento' => 3,
+            'concluida' => 4,
+            'cancelada' => 999
+        ];
+
+        if ($ordem[$novo_estado] < $ordem[$estadoAtual] && $estadoAtual !== 'cancelada') {
+            header("Location: admin.php?estado_invalido=1");
+            exit;
+        }
+
+        // atualizar
+        $stmt = $conn->prepare("UPDATE encomendas SET estado = ? WHERE id = ?");
+        $stmt->bind_param("si", $novo_estado, $id);
+        $stmt->execute();
+        $stmt->close();
+
+        // email
+        if ($estadoAtual !== $novo_estado && !empty($emailCliente)) {
+            enviarEmailAtualizacaoEstadoEncomenda(
+                $emailCliente,
+                $nomeCliente,
+                $id,
+                $novo_estado
+            );
+        }
+
+        header("Location: admin.php?estado_atualizado=1");
+        exit;
     }
 
     header("Location: admin.php?estado_invalido=1");
@@ -512,168 +544,265 @@ $encomendas = $conn->query("
     <?php endif; ?>
 
     <h2>Marcações <a href="?export=marcacoes" class="export-btn">Exportar CSV</a></h2>
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Data</th>
-                <th>Hora</th>
-                <th>Serviço</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php if ($marcacoes && $marcacoes->num_rows > 0): ?>
-                <?php while ($m = $marcacoes->fetch_assoc()): ?>
-                    <?php
-                    $indicativoWpp = preg_replace('/\D/', '', $m['telefone_indicativo'] ?? '');
-                    $telefoneWpp = preg_replace('/\D/', '', $m['telefone'] ?? '');
-                    $numeroWpp = $indicativoWpp . $telefoneWpp;
 
-                    $mensagemWpp = "Olá " . $m['user_nome'] . ", a NR Detail informa que a tua marcação foi desmarcada.\n\n";
-                    $mensagemWpp .= "Serviço: " . $m['servico'] . "\n";
-                    $mensagemWpp .= "Data: " . $m['data_marcacao'] . "\n";
-                    $mensagemWpp .= "Hora: " . $m['hora'] . "\n\n";
-                    $mensagemWpp .= "Pedimos desculpa pelo incómodo. Entra em contacto connosco para reagendarmos uma nova data.\n\n";
-                    $mensagemWpp .= "Obrigado,\nNR Detail";
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Serviço</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
 
-                    $linkWpp = !empty($numeroWpp)
-                        ? "https://wa.me/" . $numeroWpp . "?text=" . urlencode($mensagemWpp)
-                        : "";
-                    ?>
+    <tbody>
+        <?php if ($marcacoes && $marcacoes->num_rows > 0): ?>
+            <?php while ($m = $marcacoes->fetch_assoc()): ?>
 
-                    <tr>
-                        <td data-label="ID"><?= (int) $m['id'] ?></td>
-                        <td data-label="Nome"><?= htmlspecialchars($m['user_nome']) ?></td>
-                        <td data-label="Email"><?= htmlspecialchars($m['user_email']) ?></td>
-                        <td data-label="Data"><?= htmlspecialchars($m['data_marcacao']) ?></td>
-                        <td data-label="Hora"><?= htmlspecialchars($m['hora']) ?></td>
-                        <td data-label="Serviço"><?= htmlspecialchars($m['servico']) ?></td>
-                        <td data-label="Ações">
-                            <div class="acoes-admin">
-                                <a href="editar_marcacao.php?id=<?= (int) $m['id'] ?>" class="export-btn" style="padding:6px 10px; margin:0;">
-                                    Editar
-                                </a>
+                <?php
+                $indicativoWpp = preg_replace('/\D/', '', $m['telefone_indicativo'] ?? '');
+                $telefoneWpp = preg_replace('/\D/', '', $m['telefone'] ?? '');
+                $numeroWpp = $indicativoWpp . $telefoneWpp;
 
-                                <a href="admin.php?apagar_marcacao=<?= (int) $m['id'] ?>"
-                                   class="btn-danger"
-                                   onclick="return desmarcarMarcacao(this.href, '<?= htmlspecialchars($linkWpp, ENT_QUOTES) ?>');">
-                                    Desmarcar
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            <?php else: ?>
+                $mensagemWpp = "Olá " . $m['user_nome'] . ", a NR Detail informa que a tua marcação foi desmarcada.\n\n";
+                $mensagemWpp .= "Serviço: " . $m['servico'] . "\n";
+                $mensagemWpp .= "Data: " . $m['data_marcacao'] . "\n";
+                $mensagemWpp .= "Hora: " . $m['hora'] . "\n\n";
+                $mensagemWpp .= "Pedimos desculpa pelo incómodo.\nNR Detail";
+
+                $linkWpp = !empty($numeroWpp)
+                    ? "https://wa.me/" . $numeroWpp . "?text=" . urlencode($mensagemWpp)
+                    : "";
+                ?>
+
                 <tr>
-                    <td colspan="7">Não existem marcações.</td>
+                    <td data-label="ID"><?= (int)$m['id'] ?></td>
+                    <td data-label="Nome"><?= htmlspecialchars($m['user_nome']) ?></td>
+                    <td data-label="Email"><?= htmlspecialchars($m['user_email']) ?></td>
+                    <td data-label="Data"><?= htmlspecialchars($m['data_marcacao']) ?></td>
+                    <td data-label="Hora"><?= htmlspecialchars($m['hora']) ?></td>
+                    <td data-label="Serviço"><?= htmlspecialchars($m['servico']) ?></td>
+
+                    <td data-label="Ações">
+                        <div class="acoes-admin">
+
+                            <a href="editar_marcacao.php?id=<?= (int)$m['id'] ?>"
+                               class="export-btn"
+                               style="padding:6px 10px;">
+                                Editar
+                            </a>
+
+                            <a href="admin.php?apagar_marcacao=<?= (int)$m['id'] ?>"
+                               class="btn-danger"
+                               onclick="return desmarcarMarcacao(this.href, '<?= htmlspecialchars($linkWpp, ENT_QUOTES) ?>');">
+                                Desmarcar
+                            </a>
+
+                        </div>
+                    </td>
                 </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
 
-    <div class="top-actions">
-        <a href="?export=encomendas" class="export-btn">Exportar CSV</a>
-
-        <form method="post" class="form-inline" onsubmit="return confirm('Tens a certeza que queres apagar todas as encomendas concluídas?');">
-            <button type="submit" name="limpar_concluidas" class="btn-danger">
-                 Limpar Encomendas Concluídas
-            </button>
-        </form>
-    </div>
-
-    <h2>Encomendas</h2>
-    <table>
-        <thead>
+            <?php endwhile; ?>
+        <?php else: ?>
             <tr>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Produtos</th>
-                <th>Total (€)</th>
-                <th>Data/Hora</th>
-                <th>Estado</th>
-                <th>Atualizar</th>
-                <th>PDF</th>
-                <th>Apagar</th>
+                <td colspan="7">Não existem marcações.</td>
             </tr>
-        </thead>
-        <tbody>
-            <?php if ($encomendas && $encomendas->num_rows > 0): ?>
-                <?php while ($e = $encomendas->fetch_assoc()): ?>
-                    <tr>
-                        <td data-label="ID"><?= (int) $e['id'] ?></td>
-                        <td data-label="Nome"><?= htmlspecialchars($e['user_nome']) ?></td>
-                        <td data-label="Email"><?= htmlspecialchars($e['user_email']) ?></td>
-                        <td data-label="Produtos">
-                            <ul>
-                                <?php
-                                $encomenda_id = (int) $e['id'];
-                                $produtos = $conn->query("
-                                    SELECT p.nome, c.quantidade
-                                    FROM carrinho c
-                                    JOIN produtos p ON c.produto_id = p.id
-                                    WHERE c.encomenda_id = $encomenda_id
-                                ");
+        <?php endif; ?>
+    </tbody>
+</table>
 
-                                if ($produtos && $produtos->num_rows > 0) {
-                                    while ($p = $produtos->fetch_assoc()) {
-                                        echo '<li>' . htmlspecialchars($p['nome']) . ' x' . (int) $p['quantidade'] . '</li>';
-                                    }
-                                } else {
-                                    echo '<li>Sem produtos</li>';
-                                }
-                                ?>
-                            </ul>
-                        </td>
-                        <td data-label="Total (€)"><?= number_format((float)$e['total'], 2, ',', '.') ?></td>
-                        <td data-label="Data/Hora"><?= htmlspecialchars($e['data_hora']) ?></td>
-                        <td data-label="Estado">
-                            <form method="POST" style="margin:0;">
-                                <input type="hidden" name="encomenda_id" value="<?= (int) $e['id'] ?>">
-                                <select name="estado" class="<?= $estado_classes[$e['estado']] ?? 'estado-pendente' ?>">
-                                    <?php foreach ($estado_labels as $valor => $label): ?>
-                                        <option value="<?= $valor ?>" <?= $e['estado'] === $valor ? 'selected' : '' ?>>
-                                            <?= $label ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
-                        </td>
-                        <td data-label="Atualizar">
-                                <button type="submit" name="update_estado" class="export-btn" style="padding:5px 10px; margin:0;">
-                                    Atualizar
-                                </button>
-                            </form>
-                        </td>
-                        <td data-label="PDF">
+
+<div class="top-actions">
+    <a href="?export=encomendas" class="export-btn">Exportar CSV</a>
+
+    <form method="post" class="form-inline"
+          onsubmit="return confirm('Apagar todas as encomendas concluídas?');">
+
+        <button type="submit" name="limpar_concluidas" class="btn-danger">
+            Limpar Encomendas Concluídas
+        </button>
+
+    </form>
+</div>
+
+
+<h2>Encomendas</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Produtos</th>
+            <th>Total (€)</th>
+            <th>Data/Hora</th>
+            <th>Estado</th>
+            <th>Atualizar</th>
+            <th>PDF</th>
+            <th>Cancelar</th>
+            <th>Apagar</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        <?php if ($encomendas && $encomendas->num_rows > 0): ?>
+            <?php while ($e = $encomendas->fetch_assoc()): ?>
+
+                <tr>
+
+                    <td data-label="ID"><?= (int)$e['id'] ?></td>
+                    <td data-label="Nome"><?= htmlspecialchars($e['user_nome']) ?></td>
+                    <td data-label="Email"><?= htmlspecialchars($e['user_email']) ?></td>
+
+                    <td data-label="Produtos">
+                        <ul>
                             <?php
-                            $ficheiroPdf = 'notas_encomenda/nota_encomenda_' . (int)$e['id'] . '.pdf';
+                            $encomenda_id = (int)$e['id'];
+
+                            $produtos = $conn->query("
+                                SELECT p.nome, c.quantidade
+                                FROM carrinho c
+                                JOIN produtos p ON c.produto_id = p.id
+                                WHERE c.encomenda_id = $encomenda_id
+                            ");
+
+                            if ($produtos && $produtos->num_rows > 0) {
+                                while ($p = $produtos->fetch_assoc()) {
+                                    echo '<li>' . htmlspecialchars($p['nome']) . ' x' . (int)$p['quantidade'] . '</li>';
+                                }
+                            } else {
+                                echo '<li>Sem produtos</li>';
+                            }
                             ?>
-                            <?php if (file_exists(__DIR__ . '/' . $ficheiroPdf)): ?>
-                                <a href="<?= $ficheiroPdf ?>" target="_blank" class="export-btn" style="padding:5px 10px; margin:0;">
-                                    Ver PDF
-                                </a>
-                            <?php else: ?>
-                                <span style="color:#999;">Sem PDF</span>
-                            <?php endif; ?>
-                        </td>
-                        <td data-label="Apagar">
-                            <form method="post" class="form-inline" onsubmit="return confirm('Tens a certeza que queres apagar esta encomenda?');">
-                                <input type="hidden" name="apagar_encomenda" value="<?= (int) $e['id'] ?>">
-                                <button type="submit" class="btn-danger">Apagar</button>
+                        </ul>
+                    </td>
+
+                    <td data-label="Total (€)">
+                        <?= number_format((float)$e['total'], 2, ',', '.') ?>
+                    </td>
+
+                    <td data-label="Data/Hora">
+                        <?= htmlspecialchars($e['data_hora']) ?>
+                    </td>
+
+                    <!-- ESTADO -->
+                    <td data-label="Estado">
+                        <span class="<?= $estado_classes[$e['estado']] ?? '' ?>">
+                            <?= $estado_labels[$e['estado']] ?? $e['estado'] ?>
+                        </span>
+                    </td>
+
+                    <!-- ATUALIZAR -->
+                    <td data-label="Atualizar">
+                        <form method="POST">
+
+                            <input type="hidden" name="encomenda_id" value="<?= (int)$e['id'] ?>">
+
+                            <select name="estado">
+
+                                <?php foreach ($estado_labels as $valor => $label): ?>
+
+                                    <?php
+                                    $ordem = [
+                                        'pendente' => 1,
+                                        'processada' => 2,
+                                        'pronta_levantamento' => 3,
+                                        'concluida' => 4,
+                                        'cancelada' => 999
+                                    ];
+
+                                    $atual = $ordem[$e['estado']] ?? 0;
+                                    $novo = $ordem[$valor] ?? 0;
+
+                                    $bloqueado = ($novo < $atual && $e['estado'] !== 'cancelada');
+                                    ?>
+
+                                    <option value="<?= $valor ?>"
+                                        <?= $e['estado'] === $valor ? 'selected' : '' ?>
+                                        <?= $bloqueado ? 'disabled' : '' ?>>
+                                        <?= $label ?>
+                                    </option>
+
+                                <?php endforeach; ?>
+
+                            </select>
+
+                            <button type="submit"
+                            name="update_estado"
+                            class="export-btn"
+                            style="padding:5px 10px; margin-top:6px;">
+                        Atualizar
+                    </button>
+
+                        </form>
+                    </td>
+
+                    <!-- PDF -->
+                    <td data-label="PDF">
+                        <?php
+                        $ficheiroPdf = 'notas_encomenda/nota_encomenda_' . (int)$e['id'] . '.pdf';
+                        ?>
+
+                        <?php if (file_exists(__DIR__ . '/' . $ficheiroPdf)): ?>
+                            <a href="<?= $ficheiroPdf ?>" target="_blank" class="export-btn">
+                                Ver PDF
+                            </a>
+                        <?php else: ?>
+                            <span style="color:#999;">Sem PDF</span>
+                        <?php endif; ?>
+                    </td>
+
+                    <!-- CANCELAR -->
+                    <td data-label="Cancelar">
+                        <?php if ($e['estado'] !== 'cancelada' && $e['estado'] !== 'concluida'): ?>
+
+                            <form method="POST"
+                                  onsubmit="return confirm('Cancelar encomenda?');">
+
+                                <input type="hidden" name="encomenda_id" value="<?= (int)$e['id'] ?>">
+                                <input type="hidden" name="estado" value="cancelada">
+
+                                <button type="submit"
+                                        name="update_estado"
+                                        class="btn-danger">
+                                    Cancelar
+                                </button>
+
                             </form>
-                        </td>
-                    </tr>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <tr>
-                    <td colspan="10">Não existem encomendas.</td>
+
+                        <?php else: ?>
+                            <span style="color:#999;">—</span>
+                        <?php endif; ?>
+                    </td>
+
+                    <!-- APAGAR -->
+                    <td data-label="Apagar">
+                        <form method="POST"
+                              onsubmit="return confirm('Apagar encomenda?');">
+
+                            <input type="hidden" name="apagar_encomenda" value="<?= (int)$e['id'] ?>">
+
+                            <button type="submit" class="btn-danger">
+                                Apagar
+                            </button>
+
+                        </form>
+                    </td>
+
                 </tr>
-            <?php endif; ?>
-        </tbody>
-    </table>
+
+            <?php endwhile; ?>
+        <?php else: ?>
+            <tr>
+                <td colspan="11">Não existem encomendas.</td>
+            </tr>
+        <?php endif; ?>
+    </tbody>
+</table>
 
 </div>
 

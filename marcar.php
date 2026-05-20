@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['marcar'])) {
     if (empty($data_marcacao) || empty($hora) || empty($servico)) {
         $erro = "Preenche todos os campos.";
     } else {
+
         $timestampData = strtotime($data_marcacao);
         $diaSemana = date('N', $timestampData);
 
@@ -52,55 +53,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['marcar'])) {
         } elseif (in_array($data_marcacao, $feriados)) {
             $erro = "Não é possível marcar em feriados.";
         } else {
-            /* Verificar disponibilidade */
-            $stmtDisp = $conn->prepare("
-                SELECT vagas, ativo
-                FROM disponibilidade
-                WHERE data = ? AND hora = ?
-                LIMIT 1
-            ");
-            $stmtDisp->bind_param("ss", $data_marcacao, $hora);
-            $stmtDisp->execute();
-            $disp = $stmtDisp->get_result()->fetch_assoc();
-            $stmtDisp->close();
 
-            if (!$disp || (int)$disp['ativo'] !== 1) {
-                $erro = "Este horário não está disponível.";
-            } else {
-                $stmtCount = $conn->prepare("
-                    SELECT COUNT(*) AS total
-                    FROM marcacoes
-                    WHERE data_marcacao = ? AND hora = ?
+            /* =========================
+                BLOQUEIO REAL DE 1 MARCAÇÃO
+                ========================= */
+                $stmtUserCheck = $conn->prepare("
+                    SELECT id 
+                    FROM marcacoes 
+                    WHERE user_id = ? 
+                    LIMIT 1
                 ");
-                $stmtCount->bind_param("ss", $data_marcacao, $hora);
-                $stmtCount->execute();
-                $ocupadas = $stmtCount->get_result()->fetch_assoc();
-                $stmtCount->close();
+                $stmtUserCheck->bind_param("i", $user_id);
+                $stmtUserCheck->execute();
+                $resUserCheck = $stmtUserCheck->get_result();
 
-                $vagas = (int)$disp['vagas'];
-                $ocupadasTotal = (int)($ocupadas['total'] ?? 0);
+                $jaTemMarcacao = ($resUserCheck && $resUserCheck->num_rows > 0);
+                $stmtUserCheck->close();
 
-                if ($ocupadasTotal >= $vagas) {
-                    $erro = "Já não existem vagas para esse horário.";
+                if ($jaTemMarcacao) {
+                    $erro = "Já tens uma marcação ativa.";
                 } else {
-                    $stmtInsert = $conn->prepare("
-                        INSERT INTO marcacoes (user_id, data_marcacao, hora, servico)
-                        VALUES (?, ?, ?, ?)
+
+                /* Verificar disponibilidade */
+                $stmtDisp = $conn->prepare("
+                    SELECT vagas, ativo
+                    FROM disponibilidade
+                    WHERE data = ? AND hora = ?
+                    LIMIT 1
+                ");
+                $stmtDisp->bind_param("ss", $data_marcacao, $hora);
+                $stmtDisp->execute();
+                $disp = $stmtDisp->get_result()->fetch_assoc();
+                $stmtDisp->close();
+
+                if (!$disp || (int)$disp['ativo'] !== 1) {
+                    $erro = "Este horário não está disponível.";
+                } else {
+
+                    $stmtCount = $conn->prepare("
+                        SELECT COUNT(*) AS total
+                        FROM marcacoes
+                        WHERE data_marcacao = ? AND hora = ?
                     ");
-                    $stmtInsert->bind_param("isss", $user_id, $data_marcacao, $hora, $servico);
+                    $stmtCount->bind_param("ss", $data_marcacao, $hora);
+                    $stmtCount->execute();
+                    $ocupadas = $stmtCount->get_result()->fetch_assoc();
+                    $stmtCount->close();
 
-                    if ($stmtInsert->execute()) {
-                        $sucesso = "Marcação efetuada com sucesso.";
+                    $vagas = (int)$disp['vagas'];
+                    $ocupadasTotal = (int)($ocupadas['total'] ?? 0);
 
-                        // Email opcional, já preparado
-                        if (function_exists('enviarEmailMarcacao')) {
-                            enviarEmailMarcacao($email_user, $nome_user, $data_marcacao, $hora, $servico);
-                        }
+                    if ($ocupadasTotal >= $vagas) {
+                        $erro = "Já não existem vagas para esse horário.";
                     } else {
-                        $erro = "Erro ao guardar a marcação.";
-                    }
 
-                    $stmtInsert->close();
+                        $stmtInsert = $conn->prepare("
+                            INSERT INTO marcacoes (user_id, data_marcacao, hora, servico)
+                            VALUES (?, ?, ?, ?)
+                        ");
+                        $stmtInsert->bind_param("isss", $user_id, $data_marcacao, $hora, $servico);
+
+                        if ($stmtInsert->execute()) {
+                            $sucesso = "Marcação efetuada com sucesso.";
+
+                            if (function_exists('enviarEmailMarcacao')) {
+                                enviarEmailMarcacao($email_user, $nome_user, $data_marcacao, $hora, $servico);
+                            }
+                        } else {
+                            $erro = "Erro ao guardar a marcação.";
+                        }
+
+                        $stmtInsert->close();
+                    }
                 }
             }
         }

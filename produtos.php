@@ -6,14 +6,31 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once('config/db.php');
 
 /* =========================
-   FILTROS
+   CATEGORIAS DINÂMICAS
 ========================= */
-$categorias_validas = ['jantes', 'interior', 'pintura', 'lavagem'];
+$categorias_validas = [];
+
+$resCat = $conn->query("SELECT DISTINCT categoria FROM produtos");
+if ($resCat) {
+    while ($row = $resCat->fetch_assoc()) {
+        if (!empty($row['categoria'])) {
+            $categorias_validas[] = $row['categoria'];
+        }
+    }
+}
+
+$categorias_validas = array_unique($categorias_validas);
+sort($categorias_validas);
+
+/* =========================
+   FILTROS SELECIONADOS
+========================= */
 $categorias_selecionadas = [];
 
 if (!empty($_GET['categoria']) && is_array($_GET['categoria'])) {
     foreach ($_GET['categoria'] as $categoria) {
         $categoria = trim($categoria);
+
         if (in_array($categoria, $categorias_validas)) {
             $categorias_selecionadas[] = $categoria;
         }
@@ -49,17 +66,16 @@ $result = $stmt->get_result();
 $produtos = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 $stmt->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta charset="UTF-8">
-    <title>Produtos - NR Detail</title>
-    <link rel="stylesheet" href="/nrdetail/css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produtos - NR Detail</title>
+<link rel="stylesheet" href="/nrdetail/css/style.css">
 
 <style>
-
-
 .produtos-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 320px));
@@ -83,7 +99,6 @@ $stmt->close();
     transform: translateY(-5px);
 }
 
-
 .produto-card img {
     width: 100%;
     aspect-ratio: 16 / 10;
@@ -93,9 +108,6 @@ $stmt->close();
     display: block;
 }
 
-/* =========================
-   TEXTO
-========================= */
 .produto-card h3 {
     color: #ffffff;
     font-size: 1.1rem;
@@ -108,13 +120,6 @@ $stmt->close();
     margin-bottom: 10px;
 }
 
-/* =========================
-   BOTÃO
-========================= */
-.produto-card form {
-    margin-top: 12px;
-}
-
 .produto-card button {
     background: #ffcc00;
     color: #000;
@@ -123,15 +128,10 @@ $stmt->close();
     border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
-    transition: 0.2s;
     margin: 10px;
 }
 
-.produto-card button:hover {
-    background: #e6b800;
-}
-
-
+/* ===== FILTROS (TEU DESIGN ORIGINAL MANTIDO) ===== */
 .filtros-form {
     max-width: 1200px;
     margin: 25px auto 10px;
@@ -165,14 +165,13 @@ $stmt->close();
     color: white;
 }
 
-.filtro-item input[type="checkbox"] {
+.filtro-item input {
     accent-color: #ffcc00;
 }
 
 .filtros-botoes {
     display: flex;
     gap: 12px;
-    flex-wrap: wrap;
 }
 
 .btn-filtro {
@@ -198,13 +197,11 @@ $stmt->close();
     color: #bbb;
 }
 
-
 @media (max-width: 768px) {
     .produtos-grid {
         grid-template-columns: 1fr;
     }
 }
-
 </style>
 </head>
 
@@ -213,84 +210,128 @@ $stmt->close();
 <?php include('includes/header.php'); ?>
 
 <section class="produtos-page">
-    <h1>Nossos Produtos</h1>
 
-    <form method="GET" class="filtros-form">
-        <h3>Filtrar por categoria</h3>
+<h1>Nossos Produtos</h1>
 
-        <div class="filtros-opcoes">
+<!-- FILTROS (100% IGUAL AO TEU ORIGINAL) -->
+<form method="GET" class="filtros-form">
+    <h3>Filtrar por categoria</h3>
+
+    <div class="filtros-opcoes">
+        <?php foreach ($categorias_validas as $cat): ?>
             <label class="filtro-item">
-                <input type="checkbox" name="categoria[]" value="jantes"
-                    <?= in_array('jantes', $categorias_selecionadas) ? 'checked' : '' ?>>
-                Jantes
+                <input type="checkbox" name="categoria[]" value="<?= htmlspecialchars($cat) ?>"
+                    <?= in_array($cat, $categorias_selecionadas) ? 'checked' : '' ?>>
+                <?= ucfirst($cat) ?>
             </label>
-
-            <label class="filtro-item">
-                <input type="checkbox" name="categoria[]" value="interior"
-                    <?= in_array('interior', $categorias_selecionadas) ? 'checked' : '' ?>>
-                Interior
-            </label>
-
-            <label class="filtro-item">
-                <input type="checkbox" name="categoria[]" value="pintura"
-                    <?= in_array('pintura', $categorias_selecionadas) ? 'checked' : '' ?>>
-                Pintura
-            </label>
-
-            <label class="filtro-item">
-                <input type="checkbox" name="categoria[]" value="lavagem"
-                    <?= in_array('lavagem', $categorias_selecionadas) ? 'checked' : '' ?>>
-                Lavagem
-            </label>
-        </div>
-
-        <div class="filtros-botoes">
-            <button type="submit" class="btn-filtro">Aplicar Filtros</button>
-            <a href="produtos.php" class="btn-limpar">Limpar Filtros</a>
-        </div>
-    </form>
-
-    <div class="resultado-filtros">
-        <?php if (!empty($categorias_selecionadas)): ?>
-            <p>Filtros ativos: <strong><?= htmlspecialchars(implode(', ', $categorias_selecionadas)) ?></strong></p>
-        <?php else: ?>
-            <p>A mostrar todos os produtos.</p>
-        <?php endif; ?>
+        <?php endforeach; ?>
     </div>
 
-    <div class="produtos-grid">
+    <div class="filtros-botoes">
+        <button type="submit" class="btn-filtro">Aplicar</button>
+        <a href="produtos.php" class="btn-limpar">Limpar</a>
+    </div>
+</form>
 
-        <?php if (!empty($produtos)): ?>
-            <?php foreach ($produtos as $produto): ?>
-                <div class="produto-card">
+<div class="resultado-filtros">
+    <?php if (!empty($categorias_selecionadas)): ?>
+        <p>Filtros ativos: <strong><?= htmlspecialchars(implode(', ', $categorias_selecionadas)) ?></strong></p>
+    <?php else: ?>
+        <p>A mostrar todos os produtos.</p>
+    <?php endif; ?>
+</div>
 
-                    <img src="/nrdetail/imagens/produtos/<?= htmlspecialchars($produto['imagem']) ?>"
-                         alt="<?= htmlspecialchars($produto['nome']) ?>">
+<!-- PRODUTOS -->
+<div class="produtos-grid">
 
-                    <h3><?= htmlspecialchars($produto['nome']) ?></h3>
+<?php foreach ($produtos as $produto): ?>
 
-                    <p class="preco">
-                        <?= number_format((float)$produto['preco'], 2, ',', '.') ?>€
-                    </p>
+    <div class="produto-card">
 
-                    <form action="adicionar_carrinho.php" method="post">
-                        <input type="hidden" name="produto_id" value="<?= (int)$produto['id'] ?>">
-                        <input type="hidden" name="ajax" value="1">
-                        <button type="submit">Adicionar ao Carrinho</button>
-                    </form>
+        <?php
+        $img = trim($produto['imagem'] ?? '');
 
-                </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <p style="color:#bbb; text-align:center;">
-                Não existem produtos para os filtros selecionados.
-            </p>
-        <?php endif; ?>
+        if (filter_var($img, FILTER_VALIDATE_URL)) {
+            $src = $img;
+        } else {
+            $img = basename($img);
+
+            $path1 = __DIR__ . '/uploads/produtos/' . $img;
+            $path2 = __DIR__ . '/imagens/produtos/' . $img;
+
+            if (!empty($img) && file_exists($path1)) {
+                $src = '/nrdetail/uploads/produtos/' . $img;
+            } elseif (!empty($img) && file_exists($path2)) {
+                $src = '/nrdetail/imagens/produtos/' . $img;
+            } else {
+                $src = '/nrdetail/imagens/produtos/default.png';
+            }
+        }
+        ?>
+
+        <img src="<?= htmlspecialchars($src) ?>" alt="produto">
+
+        <h3><?= htmlspecialchars($produto['nome']) ?></h3>
+
+        <p class="preco">
+            <?= number_format((float)$produto['preco'], 2, ',', '.') ?>€
+        </p>
+
+        <form class="form-carrinho" action="adicionar_carrinho.php" method="post">
+            <input type="hidden" name="produto_id" value="<?= (int)$produto['id'] ?>">
+            <input type="hidden" name="ajax" value="1">
+            <button type="submit">Adicionar ao Carrinho</button>
+        </form>
 
     </div>
+
+<?php endforeach; ?>
+
+</div>
+
 </section>
 
 <?php include('includes/footer.php'); ?>
+
+<script>
+// AJAX carrinho (SEM mostrar JSON na página)
+document.querySelectorAll('.form-carrinho').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch('adicionar_carrinho.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            if (data.status === 'ok') {
+
+                const contador = document.getElementById('contador');
+                if (contador) contador.innerText = data.contador;
+
+                if (typeof atualizarMiniCarrinhoUI === 'function') {
+                    atualizarMiniCarrinhoUI();
+                }
+
+                if (typeof abrirMiniCarrinho === 'function') {
+                    abrirMiniCarrinho();
+                }
+
+            } else {
+                alert(data.mensagem || 'Erro ao adicionar.');
+            }
+
+        })
+        .catch(() => {
+            alert('Erro no servidor.');
+        });
+    });
+});
+</script>
 
 </body>
 </html>

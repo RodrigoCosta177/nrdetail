@@ -30,12 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adicionar'])) {
             case 'manha':
                 $horarios = ['09:00:00','10:00:00','11:00:00','12:00:00'];
                 break;
+
             case 'tarde':
                 $horarios = ['14:00:00','15:00:00','16:00:00','17:00:00','18:00:00'];
                 break;
+
             case 'dia':
                 $horarios = ['09:00:00','10:00:00','11:00:00','12:00:00','14:00:00','15:00:00','16:00:00','17:00:00','18:00:00'];
                 break;
+
             case 'custom':
                 if (!$hora) {
                     $erro = "Escolhe uma hora.";
@@ -46,21 +49,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['adicionar'])) {
         }
 
         if (!$erro) {
+
+            $hoje = date('Y-m-d');
+            $agora = date('H:i:s');
+            $criados = 0;
+
             foreach ($horarios as $h) {
 
-                $check = $conn->prepare("SELECT id FROM disponibilidade WHERE data=? AND hora=?");
+                // ❌ bloqueia datas passadas
+                if ($data < $hoje) {
+                    continue;
+                }
+
+                // ❌ bloqueia horas passadas no mesmo dia
+                if ($data === $hoje && $h <= $agora) {
+                    continue;
+                }
+
+                $check = $conn->prepare("
+                    SELECT id 
+                    FROM disponibilidade 
+                    WHERE data = ? AND hora = ?
+                ");
                 $check->bind_param("ss", $data, $h);
                 $check->execute();
                 $res = $check->get_result();
 
                 if ($res->num_rows == 0) {
-                    $ins = $conn->prepare("INSERT INTO disponibilidade (data, hora, ativo) VALUES (?, ?, 1)");
+
+                    $ins = $conn->prepare("
+                        INSERT INTO disponibilidade (data, hora, ativo) 
+                        VALUES (?, ?, 1)
+                    ");
                     $ins->bind_param("ss", $data, $h);
                     $ins->execute();
+
+                    $criados++;
                 }
             }
 
-            $mensagem = "Disponibilidade criada com sucesso.";
+            if ($criados > 0) {
+                $mensagem = "Disponibilidade criada com sucesso.";
+            } else {
+                $erro = "Nenhum horário válido foi criado.";
+            }
         }
     }
 }
@@ -80,9 +112,8 @@ if (isset($_GET['apagar'])) {
 }
 
 /* =========================
-   LISTAR DISPONIBILIDADE + MARCAÇÕES
+   LISTAR (SEM HORAS PASSADAS)
 ========================= */
-
 $sql = "
 SELECT 
 d.id,
@@ -92,11 +123,11 @@ d.ativo,
 m.id AS marcacao_id,
 m.nome,
 m.email,
-m.servico,
-m.user_id
+m.servico
 FROM disponibilidade d
 LEFT JOIN marcacoes m 
 ON d.data = m.data_marcacao AND d.hora = m.hora
+WHERE (d.data > CURDATE() OR (d.data = CURDATE() AND d.hora >= CURTIME()))
 ORDER BY d.data ASC, d.hora ASC
 ";
 
@@ -112,23 +143,15 @@ $result = $conn->query($sql);
 
 <style>
 body{background:#111;color:#fff;font-family:Segoe UI}
-
 .container{max-width:1100px;margin:40px auto}
-
 .box{background:#1a1a1a;padding:20px;border-radius:14px;margin-bottom:20px}
-
 h1,h2{color:#ffcc00}
-
 table{width:100%;border-collapse:collapse}
-
 td,th{padding:10px;border-bottom:1px solid #2a2a2a}
-
 .btn{background:#ffcc00;color:#000;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:bold}
 .btn:hover{background:#e6b800}
-
 .badge-ok{color:#7CFC90}
 .badge-no{color:#ff6b6b}
-
 .form-inline{display:flex;gap:10px;align-items:center}
 input,select{padding:8px;border-radius:8px;border:none;background:#222;color:#fff}
 </style>
@@ -184,7 +207,6 @@ input,select{padding:8px;border-radius:8px;border:none;background:#222;color:#ff
 </tr>
 
 <?php while($row = $result->fetch_assoc()): ?>
-
 <tr>
 <td><?= $row['data'] ?></td>
 <td><?= substr($row['hora'],0,5) ?></td>
@@ -199,34 +221,17 @@ input,select{padding:8px;border-radius:8px;border:none;background:#222;color:#ff
 
 <td>
 <?php if($row['marcacao_id']): ?>
-<?= $row['nome'] ?>
+<?= htmlspecialchars($row['nome']) ?>
 <?php else: ?>
 —
 <?php endif; ?>
 </td>
 
 <td>
-
 <a class="btn" href="?apagar=<?= $row['id'] ?>">Apagar</a>
-
-<?php if($row['marcacao_id']): ?>
-
-<?php
-$msg = urlencode("Olá {$row['nome']}, a sua marcação de {$row['servico']} foi desmarcada. Pode reagendar connosco.");
-$phone = "3519XXXXXXXX";
-?>
-
-<a class="btn" target="_blank"
-href="https://wa.me/<?= $phone ?>?text=<?= $msg ?>">
-WhatsApp
-</a>
-
-<?php endif; ?>
-
 </td>
 
 </tr>
-
 <?php endwhile; ?>
 
 </table>
